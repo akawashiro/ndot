@@ -105,6 +105,94 @@ fn test_tokenize_dot() {
     );
 }
 
+// Because newline characters are used to parse C++ style comments, we remove them here.
+fn remove_comments(tokens: Vec<String>) -> Vec<String> {
+    let mut new_tokens = Vec::new();
+    let mut in_cpp_comment = false;
+    let mut in_c_comment = false;
+    for token in tokens {
+        if in_cpp_comment {
+            if token == "\n" {
+                in_cpp_comment = false;
+            }
+            continue;
+        }
+        if in_c_comment {
+            if token == "*/" {
+                in_c_comment = false;
+            }
+            continue;
+        }
+        if token == "//" {
+            in_cpp_comment = true;
+            continue;
+        }
+        if token == "/*" {
+            in_c_comment = true;
+            continue;
+        }
+        new_tokens.push(token);
+    }
+
+    new_tokens = new_tokens
+        .into_iter()
+        .filter(|t| t != &"\n".to_string())
+        .collect();
+    new_tokens
+}
+
+#[test]
+fn test_remove_comments() {
+    let dot_str = r#"graph {
+    // This is a comment
+    a -- b;
+    /* This is a comment */
+    b -- c;
+    a -- c;
+    /* // This is a comment */
+    d -- c;
+    // "This is a comment"
+    e -- c;
+    // /* This is a comment */
+    e -- a;
+    /* "This is a comment" */
+}"#;
+    let tokens = tokenize_dot(dot_str.to_string());
+    let tokens = remove_comments(tokens);
+    assert_eq!(
+        tokens,
+        vec![
+            "graph".to_string(),
+            "{".to_string(),
+            "a".to_string(),
+            "--".to_string(),
+            "b".to_string(),
+            ";".to_string(),
+            "b".to_string(),
+            "--".to_string(),
+            "c".to_string(),
+            ";".to_string(),
+            "a".to_string(),
+            "--".to_string(),
+            "c".to_string(),
+            ";".to_string(),
+            "d".to_string(),
+            "--".to_string(),
+            "c".to_string(),
+            ";".to_string(),
+            "e".to_string(),
+            "--".to_string(),
+            "c".to_string(),
+            ";".to_string(),
+            "e".to_string(),
+            "--".to_string(),
+            "a".to_string(),
+            ";".to_string(),
+            "}".to_string(),
+        ]
+    );
+}
+
 fn parse_dot(dot_str: String) {
     info!("parsing dot string");
     let tokens = tokenize_dot(dot_str);
