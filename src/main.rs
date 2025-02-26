@@ -4,6 +4,7 @@ use log::info;
 use std::env;
 use std::io::Write;
 
+mod ast;
 mod tokenize;
 
 #[derive(Parser, Debug)]
