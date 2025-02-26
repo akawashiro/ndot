@@ -53,10 +53,10 @@ struct IDEqStmt {
 fn parse_id_eq_stmt(tokens: &Vec<String>) -> Result<(IDEqStmt, Vec<String>), String> {
     let (id_left, rest) = parse_id(tokens)?;
     if rest.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     if rest[0] != "=" {
-        return Err("expected =".to_string());
+        return Err(format!("{}:{} Expected '='", file!(), line!()));
     }
     let (id_right, rest) = parse_id(&rest[1..].to_vec())?;
     Ok((IDEqStmt { id_left, id_right }, rest))
@@ -129,12 +129,12 @@ fn test_parse_edge_stmt_edge() {
 
 fn parse_edge_stmt_op(tokens: &Vec<String>) -> Result<(EdgeStmtOp, Vec<String>), String> {
     if tokens.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     match tokens[0].as_str() {
         "--" => Ok((EdgeStmtOp::Undirected, tokens[1..].to_vec())),
         "->" => Ok((EdgeStmtOp::Directed, tokens[1..].to_vec())),
-        _ => Err("expected edge operator".to_string()),
+        _ => Err(format!("{}:{} Expected edge operator", file!(), line!())),
     }
 }
 
@@ -336,7 +336,12 @@ fn parse_stmt(tokens: &Vec<String>) -> Result<(Stmt, Vec<String>), String> {
     if let Ok((edge_stmt, rest)) = try_edge_stmt {
         return Ok((Stmt::EdgeStmt(edge_stmt), rest));
     }
-    Err(format!("{}:{} Expected stmt. tokens={:?}", file!(), line!(), tokens))
+    Err(format!(
+        "{}:{} Expected stmt. tokens={:?}",
+        file!(),
+        line!(),
+        tokens
+    ))
 }
 
 #[test]
@@ -398,10 +403,13 @@ fn parse_stmt_list(tokens: &Vec<String>) -> Result<(StmtList, Vec<String>), Stri
             ));
         }
         Err(_) => {
-            return Ok((StmtList {
-                stmt,
-                stmt_list: None,
-            }, rest));
+            return Ok((
+                StmtList {
+                    stmt,
+                    stmt_list: None,
+                },
+                rest,
+            ));
         }
     }
 }
@@ -461,32 +469,32 @@ fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
         rest = rest[1..].to_vec();
     }
     if rest.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     let is_digraph = match rest[0].to_lowercase().as_str() {
         "graph" => false,
         "digraph" => true,
-        _ => return Err("expected graph or digraph".to_string()),
+        _ => return Err(format!("{}:{} Expected graph or digraph", file!(), line!())),
     };
     rest = rest[1..].to_vec();
     if rest.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     match rest[0].as_str() {
         "{" => {}
-        _ => return Err("expected {".to_string()),
+        _ => return Err(format!("{}:{} Expected {{", file!(), line!())),
     }
     rest = rest[1..].to_vec();
     if rest.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} Expected {{", file!(), line!()));
     }
     let (stmt_list, mut rest) = parse_stmt_list(&rest[0..].to_vec())?;
     if rest.len() == 0 {
-        return Err("no tokens".to_string());
+        return Err(format!("{}:{} Expected {{", file!(), line!()));
     }
     match rest[0].as_str() {
         "}" => {}
-        _ => return Err("expected }".to_string()),
+        _ => return Err(format!("{}:{} Expected '}}'", file!(), line!())),
     }
     rest = rest[1..].to_vec();
     Ok((
