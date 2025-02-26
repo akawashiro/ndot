@@ -18,7 +18,7 @@ struct NNDotArgs {
 
 fn parse_dot(dot_str: String) {
     info!("parsing dot string");
-    let tokens = tokenize::tokenize_dot(dot_str);
+    let tokens = tokenize::tokenize(dot_str);
     for token in tokens {
         info!("token: {}", token);
     }
