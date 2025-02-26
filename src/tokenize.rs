@@ -1,3 +1,7 @@
+macro_rules! vec_of_strings {
+    ($($x:expr),*) => (vec![$($x.to_string()),*]);
+}
+
 fn raw_tokenize_dot(dot_str: String) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut token = String::new();
@@ -51,41 +55,10 @@ fn test_raw_tokenize_dot() {
     let tokens = raw_tokenize_dot(dot_str.to_string());
     assert_eq!(
         tokens,
-        vec![
-            "graph".to_string(),
-            "{".to_string(),
-            "\n".to_string(),
-            "a".to_string(),
-            "--".to_string(),
-            "b".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "b".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "a".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "d".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "e".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "e".to_string(),
-            "--".to_string(),
-            "a".to_string(),
-            ";".to_string(),
-            "\n".to_string(),
-            "}".to_string(),
+        vec_of_strings![
+            "graph", "{", "\n", "a", "--", "b", ";", "\n", "b", "--", "c", ";", "\n", "a", "--",
+            "c", ";", "\n", "d", "--", "c", ";", "\n", "e", "--", "c", ";", "\n", "e", "--", "a",
+            ";", "\n", "}"
         ]
     );
 }
@@ -142,43 +115,18 @@ fn test_remove_comments() {
     e -- a;
     /* "This is a comment" */
 }"#;
-    let tokens = tokenize_dot(dot_str.to_string());
+    let tokens = tokenize(dot_str.to_string());
     let tokens = remove_comments(tokens);
     assert_eq!(
         tokens,
-        vec![
-            "graph".to_string(),
-            "{".to_string(),
-            "a".to_string(),
-            "--".to_string(),
-            "b".to_string(),
-            ";".to_string(),
-            "b".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "a".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "d".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "e".to_string(),
-            "--".to_string(),
-            "c".to_string(),
-            ";".to_string(),
-            "e".to_string(),
-            "--".to_string(),
-            "a".to_string(),
-            ";".to_string(),
-            "}".to_string(),
+        vec_of_strings![
+            "graph", "{", "a", "--", "b", ";", "b", "--", "c", ";", "a", "--", "c", ";", "d", "--",
+            "c", ";", "e", "--", "c", ";", "e", "--", "a", ";", "}"
         ]
     );
 }
 
-pub fn tokenize_dot(dot_str: String) -> Vec<String> {
+pub fn tokenize(dot_str: String) -> Vec<String> {
     let tokens = raw_tokenize_dot(dot_str);
     let tokens = remove_comments(tokens);
     tokens
