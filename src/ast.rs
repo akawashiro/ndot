@@ -389,8 +389,22 @@ struct StmtList {
     stmt_list: Option<Box<StmtList>>,
 }
 
+fn parse_semicolon(tokens: &Vec<String>) -> Result<Vec<String>, String> {
+    if tokens.len() == 0 {
+        return Err(format!("{}:{} No tokens", file!(), line!()));
+    }
+    if tokens[0] != ";" {
+        return Err(format!("{}:{} Expected ';'", file!(), line!()));
+    }
+    Ok(tokens[1..].to_vec())
+}
+
 fn parse_stmt_list(tokens: &Vec<String>) -> Result<(StmtList, Vec<String>), String> {
-    let (stmt, rest) = parse_stmt(tokens)?;
+    let (stmt, mut rest) = parse_stmt(tokens)?;
+    let try_semicolon = parse_semicolon(&rest);
+    if let Ok(r) = try_semicolon {
+        rest = r;
+    }
     let try_stmt_list = parse_stmt_list(&rest);
     match try_stmt_list {
         Ok((stmt_list, rest)) => {
