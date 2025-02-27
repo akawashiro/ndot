@@ -655,3 +655,108 @@ fn test_parse_graph() {
     assert_eq!(graph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
+
+#[derive(Debug, PartialEq)]
+struct AList {
+    id_left: ID,
+    id_right: ID,
+    a_list: Option<Box<AList>>,
+}
+
+fn skip_semicolon_or_camma(tokens: &Vec<String>) -> Vec<String> {
+    if tokens.len() == 0 {
+        return tokens.clone();
+    }
+    match tokens[0].as_str() {
+        ";" => tokens[1..].to_vec(),
+        "," => tokens[1..].to_vec(),
+        _ => tokens.clone(),
+    }
+}
+
+fn parse_a_list(tokens: &Vec<String>) -> Result<(AList, Vec<String>), String> {
+    let (id_left, rest) = parse_id(tokens)?;
+    if rest.len() == 0 {
+        return Err(format!("{}:{} No tokens", file!(), line!()));
+    }
+    if rest[0] != "=" {
+        return Err(format!("{}:{} Expected '='", file!(), line!()));
+    }
+    let (id_right, mut rest) = parse_id(&rest[1..].to_vec())?;
+    rest = skip_semicolon_or_camma(&rest);
+    let try_a_list = parse_a_list(&rest);
+    match try_a_list {
+        Ok((a_list, rest)) => {
+            return Ok((
+                AList {
+                    id_left,
+                    id_right,
+                    a_list: Some(Box::new(a_list)),
+                },
+                rest,
+            ));
+        }
+        Err(_) => {
+            return Ok((
+                AList {
+                    id_left,
+                    id_right,
+                    a_list: None,
+                },
+                rest,
+            ));
+        }
+    }
+}
+
+#[test]
+fn test_parse_a_list() {
+    let tokens = tokenize("a = b".to_string());
+    let (a_list, rest) = parse_a_list(&tokens).unwrap();
+    assert_eq!(a_list.id_left.name, "a");
+    assert_eq!(a_list.id_right.name, "b");
+    assert_eq!(a_list.a_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize("a = b, c = d".to_string());
+    let (a_list, rest) = parse_a_list(&tokens).unwrap();
+    assert_eq!(a_list.id_left.name, "a");
+    assert_eq!(a_list.id_right.name, "b");
+    match a_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "c");
+            assert_eq!(a_list.id_right.name, "d");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize("a = b; c = d".to_string());
+    let (a_list, rest) = parse_a_list(&tokens).unwrap();
+    assert_eq!(a_list.id_left.name, "a");
+    assert_eq!(a_list.id_right.name, "b");
+    match a_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "c");
+            assert_eq!(a_list.id_right.name, "d");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize("a = b c = d".to_string());
+    let (a_list, rest) = parse_a_list(&tokens).unwrap();
+    assert_eq!(a_list.id_left.name, "a");
+    assert_eq!(a_list.id_right.name, "b");
+    match a_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "c");
+            assert_eq!(a_list.id_right.name, "d");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
