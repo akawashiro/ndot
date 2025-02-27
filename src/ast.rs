@@ -22,7 +22,7 @@ fn parse_id(tokens: &Vec<String>) -> Result<(ID, Vec<String>), String> {
         return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     if !valid_as_id(&tokens[0]) {
-        return Err(format!("{}:{} Invalid id", file!(), line!()));
+        return Err(format!("{}:{} Invalid id: {}", file!(), line!(), tokens[0]));
     }
     Ok((
         ID {
@@ -758,5 +758,59 @@ fn test_parse_a_list() {
         }
         None => panic!("expected a_list"),
     }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
+#[derive(Debug, PartialEq)]
+struct AttrList {
+    a_list: AList,
+    attr_list: Option<Box<AttrList>>,
+}
+
+fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), String> {
+    if tokens.len() == 0 {
+        return Err(format!("{}:{} No tokens", file!(), line!()));
+    }
+    if tokens[0] != "[" {
+        return Err(format!("{}:{} Expected '['", file!(), line!()));
+    }
+    let (a_list, mut rest) = parse_a_list(&tokens[1..].to_vec())?;
+    if rest.len() == 0 {
+        return Err(format!("{}:{} Expected ']'", file!(), line!()));
+    }
+    if rest[0] != "]" {
+        return Err(format!("{}:{} Expected ']'", file!(), line!()));
+    }
+    rest = rest[1..].to_vec();
+    let try_attr_list = parse_attr_list(&rest);
+    match try_attr_list {
+        Ok((attr_list, rest)) => {
+            return Ok((
+                AttrList {
+                    a_list,
+                    attr_list: Some(Box::new(attr_list)),
+                },
+                rest,
+            ));
+        }
+        Err(_) => {
+            return Ok((
+                AttrList {
+                    a_list,
+                    attr_list: None,
+                },
+                rest,
+            ));
+        }
+    }
+}
+
+#[test]
+fn test_parse_attr_list() {
+    let tokens = tokenize(r#"[a = b]"#.to_string());
+    let (attr_list, rest) = parse_attr_list(&tokens).unwrap();
+    assert_eq!(attr_list.a_list.id_left.name, "a");
+    assert_eq!(attr_list.a_list.id_right.name, "b");
+    assert_eq!(attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
