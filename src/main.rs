@@ -10,7 +10,7 @@ mod ndot;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct NNDotArgs {
+struct NDotArgs {
     #[arg(short, long)]
     input_file: String,
     #[arg(short, long)]
@@ -35,7 +35,7 @@ fn main() {
         })
         .init();
 
-    let args = NNDotArgs::parse();
+    let args = NDotArgs::parse();
     info!("input file: {}", args.input_file);
 
     let dot = std::fs::read_to_string(&args.input_file).unwrap();
