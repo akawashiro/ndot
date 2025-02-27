@@ -7,3 +7,9 @@ pub fn make_svg_from_dot(dot: String) -> String {
     assert!(ast.is_ok(), "Failed to parse graph ast:{:?}", ast);
     "Dummy SVG".to_string()
 }
+
+#[test]
+fn test_digraph_dot() {
+    let dot = std::fs::read_to_string("digraph.dot").unwrap();
+    make_svg_from_dot(dot);
+}
