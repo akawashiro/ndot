@@ -109,7 +109,7 @@ struct EdgeStmtRHS {
 struct EdgeStmt {
     edge_edge: EdgeStmtEdge,
     edge_rhs: Option<Box<EdgeStmtRHS>>,
-    // TODO attributes
+    attr_list: Option<AttrList>,
 }
 
 fn parse_edge_stmt_edge(tokens: &Vec<String>) -> Result<(EdgeStmtEdge, Vec<String>), String> {
@@ -319,6 +319,8 @@ fn test_parse_edge_stmt() {
         None => panic!("expected edge_rhs"),
     }
     assert_eq!(rest, vec!["}".to_string()]);
+
+    let tokens = tokenize("a -> b[label=\"0.2\",weight=\"0.2\"];".to_string());
 }
 
 #[derive(Debug, PartialEq)]
