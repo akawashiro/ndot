@@ -5,8 +5,8 @@ use std::env;
 use std::io::Write;
 
 mod ast;
-mod tokenize;
 mod ndot;
+mod tokenize;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

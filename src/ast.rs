@@ -468,8 +468,11 @@ fn test_parse_stmt_list() {
     }
     assert_eq!(rest, vec![] as Vec<String>);
 
-    let tokens = tokenize(r#"a = b;
-a -- b;"#.to_string());
+    let tokens = tokenize(
+        r#"a = b;
+a -- b;"#
+            .to_string(),
+    );
     let (stmt_list, rest) = parse_stmt_list(&tokens).unwrap();
     match stmt_list.stmt {
         Stmt::IDEqStmt(id_eq_stmt) => {
@@ -545,7 +548,14 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
     };
     match rest[0].as_str() {
         "{" => {}
-        _ => return Err(format!("{}:{} Expected {{ rest:{:?}", file!(), line!(), rest)),
+        _ => {
+            return Err(format!(
+                "{}:{} Expected {{ rest:{:?}",
+                file!(),
+                line!(),
+                rest
+            ))
+        }
     }
     rest = rest[1..].to_vec();
     if rest.len() == 0 {
@@ -557,7 +567,14 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
     }
     match rest[0].as_str() {
         "}" => {}
-        _ => return Err(format!("{}:{} Expected '}}' rest:{:?}", file!(), line!(), rest)),
+        _ => {
+            return Err(format!(
+                "{}:{} Expected '}}' rest:{:?}",
+                file!(),
+                line!(),
+                rest
+            ))
+        }
     }
     rest = rest[1..].to_vec();
     Ok((
@@ -622,7 +639,9 @@ fn test_parse_graph() {
     let tokens = tokenize(
         r#"strict graph hoge {
     a = b
-}"#.to_string());
+}"#
+        .to_string(),
+    );
     let (graph, rest) = parse_graph(&tokens).unwrap();
     assert_eq!(graph.strict, true);
     assert_eq!(graph.is_digraph, false);
