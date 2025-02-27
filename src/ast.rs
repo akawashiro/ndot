@@ -813,4 +813,18 @@ fn test_parse_attr_list() {
     assert_eq!(attr_list.a_list.id_right.name, "b");
     assert_eq!(attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"[a = b c = d]"#.to_string());
+    let (attr_list, rest) = parse_attr_list(&tokens).unwrap();
+    assert_eq!(attr_list.a_list.id_left.name, "a");
+    assert_eq!(attr_list.a_list.id_right.name, "b");
+    match attr_list.attr_list {
+        Some(attr_list) => {
+            assert_eq!(attr_list.a_list.id_left.name, "c");
+            assert_eq!(attr_list.a_list.id_right.name, "d");
+            assert_eq!(attr_list.attr_list, None);
+        }
+        None => panic!("expected attr_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
 }
