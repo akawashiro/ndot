@@ -458,6 +458,7 @@ fn test_parse_stmt_list() {
 #[derive(Debug, PartialEq)]
 pub struct Graph {
     strict: bool,
+    id: Option<ID>,
     is_digraph: bool,
     stmt_list: StmtList,
 }
@@ -481,9 +482,17 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
     if rest.len() == 0 {
         return Err(format!("{}:{} No tokens", file!(), line!()));
     }
+    let try_id = parse_id(&rest);
+    let id = match try_id {
+        Ok((id, r)) => {
+            rest = r;
+            Some(id)
+        }
+        Err(_) => None,
+    };
     match rest[0].as_str() {
         "{" => {}
-        _ => return Err(format!("{}:{} Expected {{", file!(), line!())),
+        _ => return Err(format!("{}:{} Expected {{ rest:{:?}", file!(), line!(), rest)),
     }
     rest = rest[1..].to_vec();
     if rest.len() == 0 {
@@ -495,12 +504,13 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
     }
     match rest[0].as_str() {
         "}" => {}
-        _ => return Err(format!("{}:{} Expected '}}'", file!(), line!())),
+        _ => return Err(format!("{}:{} Expected '}}' rest:{:?}", file!(), line!(), rest)),
     }
     rest = rest[1..].to_vec();
     Ok((
         Graph {
             strict,
+            id,
             is_digraph,
             stmt_list,
         },
@@ -554,5 +564,22 @@ fn test_parse_graph() {
         }
         None => panic!("expected stmt_list"),
     }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(
+        r#"strict graph hoge {
+    a = b
+}"#.to_string());
+    let (graph, rest) = parse_graph(&tokens).unwrap();
+    assert_eq!(graph.strict, true);
+    assert_eq!(graph.is_digraph, false);
+    match graph.stmt_list.stmt {
+        Stmt::IDEqStmt(id_eq_stmt) => {
+            assert_eq!(id_eq_stmt.id_left.name, "a");
+            assert_eq!(id_eq_stmt.id_right.name, "b");
+        }
+        _ => panic!("expected IDEqStmt"),
+    }
+    assert_eq!(graph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
