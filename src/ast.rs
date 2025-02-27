@@ -455,13 +455,14 @@ fn test_parse_stmt_list() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-struct Graph {
+#[derive(Debug, PartialEq)]
+pub struct Graph {
     strict: bool,
     is_digraph: bool,
     stmt_list: StmtList,
 }
 
-fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
+pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
     let mut rest = tokens.clone();
     let mut strict = false;
     if rest.len() > 0 && rest[0].to_lowercase() == "strict" {

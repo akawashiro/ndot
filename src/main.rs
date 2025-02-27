@@ -16,12 +16,11 @@ struct NNDotArgs {
     output_file: String,
 }
 
-fn parse_dot(dot_str: String) {
-    info!("parsing dot string");
-    let tokens = tokenize::tokenize(dot_str);
-    for token in tokens {
-        info!("token: {}", token);
-    }
+fn make_svg_from_dot(dot: String) -> String {
+    let tokens = tokenize::tokenize(dot);
+    let ast = ast::parse_graph(&tokens);
+    assert!(ast.is_ok(), "Failed to parse graph ast:{:?}", ast);
+    "Dummy SVG".to_string()
 }
 
 fn main() {
@@ -45,6 +44,6 @@ fn main() {
     let args = NNDotArgs::parse();
     info!("input file: {}", args.input_file);
 
-    let dot_str = std::fs::read_to_string(&args.input_file).unwrap();
-    parse_dot(dot_str);
+    let dot = std::fs::read_to_string(&args.input_file).unwrap();
+    make_svg_from_dot(dot);
 }
