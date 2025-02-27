@@ -763,7 +763,7 @@ fn test_parse_a_list() {
 
 #[derive(Debug, PartialEq)]
 struct AttrList {
-    a_list: AList,
+    a_list: Option<AList>,
     attr_list: Option<Box<AttrList>>,
 }
 
@@ -774,12 +774,15 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
     if tokens[0] != "[" {
         return Err(format!("{}:{} Expected '['", file!(), line!()));
     }
-    let (a_list, mut rest) = parse_a_list(&tokens[1..].to_vec())?;
-    if rest.len() == 0 {
-        return Err(format!("{}:{} Expected ']'", file!(), line!()));
+    let try_a_list = parse_a_list(&tokens[1..].to_vec());
+    let mut rest = tokens[1..].to_vec();
+    let mut head_a_list = None;
+    if let Ok((h, r)) = try_a_list {
+        rest = r;
+        head_a_list = Some(h);
     }
     if rest[0] != "]" {
-        return Err(format!("{}:{} Expected ']'", file!(), line!()));
+        return Err(format!("{}:{} Expected ']' rest={:?}", file!(), line!(), rest));
     }
     rest = rest[1..].to_vec();
     let try_attr_list = parse_attr_list(&rest);
@@ -787,7 +790,7 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
         Ok((attr_list, rest)) => {
             return Ok((
                 AttrList {
-                    a_list,
+                    a_list: head_a_list,
                     attr_list: Some(Box::new(attr_list)),
                 },
                 rest,
@@ -796,7 +799,7 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
         Err(_) => {
             return Ok((
                 AttrList {
-                    a_list,
+                    a_list: head_a_list,
                     attr_list: None,
                 },
                 rest,
@@ -809,22 +812,40 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
 fn test_parse_attr_list() {
     let tokens = tokenize(r#"[a = b]"#.to_string());
     let (attr_list, rest) = parse_attr_list(&tokens).unwrap();
-    assert_eq!(attr_list.a_list.id_left.name, "a");
-    assert_eq!(attr_list.a_list.id_right.name, "b");
+    match attr_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "a");
+            assert_eq!(a_list.id_right.name, "b");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
     assert_eq!(attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 
-    let tokens = tokenize(r#"[a = b c = d]"#.to_string());
+    let tokens = tokenize(r#"[a = b, c = d]"#.to_string());
     let (attr_list, rest) = parse_attr_list(&tokens).unwrap();
-    assert_eq!(attr_list.a_list.id_left.name, "a");
-    assert_eq!(attr_list.a_list.id_right.name, "b");
-    match attr_list.attr_list {
-        Some(attr_list) => {
-            assert_eq!(attr_list.a_list.id_left.name, "c");
-            assert_eq!(attr_list.a_list.id_right.name, "d");
-            assert_eq!(attr_list.attr_list, None);
+    match attr_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "a");
+            assert_eq!(a_list.id_right.name, "b");
+            match a_list.a_list {
+                Some(a_list) => {
+                    assert_eq!(a_list.id_left.name, "c");
+                    assert_eq!(a_list.id_right.name, "d");
+                    assert_eq!(a_list.a_list, None);
+                }
+                None => panic!("expected a_list"),
+            }
         }
-        None => panic!("expected attr_list"),
+        None => panic!("expected a_list"),
     }
+    assert_eq!(attr_list.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"[]"#.to_string());
+    let (attr_list, rest) = parse_attr_list(&tokens).unwrap();
+    assert_eq!(attr_list.a_list, None);
+    assert_eq!(attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
