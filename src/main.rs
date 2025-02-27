@@ -6,6 +6,7 @@ use std::io::Write;
 
 mod ast;
 mod tokenize;
+mod ndot;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -14,13 +15,6 @@ struct NNDotArgs {
     input_file: String,
     #[arg(short, long)]
     output_file: String,
-}
-
-fn make_svg_from_dot(dot: String) -> String {
-    let tokens = tokenize::tokenize(dot);
-    let ast = ast::parse_graph(&tokens);
-    assert!(ast.is_ok(), "Failed to parse graph ast:{:?}", ast);
-    "Dummy SVG".to_string()
 }
 
 fn main() {
@@ -45,5 +39,5 @@ fn main() {
     info!("input file: {}", args.input_file);
 
     let dot = std::fs::read_to_string(&args.input_file).unwrap();
-    make_svg_from_dot(dot);
+    ndot::make_svg_from_dot(dot);
 }
