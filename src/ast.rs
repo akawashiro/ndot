@@ -453,6 +453,45 @@ fn test_parse_stmt_list() {
         None => panic!("expected stmt_list"),
     }
     assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"a = b;
+a -- b;"#.to_string());
+    let (stmt_list, rest) = parse_stmt_list(&tokens).unwrap();
+    match stmt_list.stmt {
+        Stmt::IDEqStmt(id_eq_stmt) => {
+            assert_eq!(id_eq_stmt.id_left.name, "a");
+            assert_eq!(id_eq_stmt.id_right.name, "b");
+        }
+        _ => panic!("expected IDEqStmt"),
+    }
+    match stmt_list.stmt_list {
+        Some(stmt_list) => {
+            match stmt_list.stmt {
+                Stmt::EdgeStmt(edge_stmt) => {
+                    match edge_stmt.edge_edge {
+                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                    }
+                    match edge_stmt.edge_rhs {
+                        Some(rhs) => {
+                            match rhs.edge_egdge {
+                                EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                            }
+                            match rhs.edge_op {
+                                EdgeStmtOp::Undirected => {}
+                                _ => panic!("expected undirected"),
+                            }
+                            assert_eq!(rhs.edge_rhs, None);
+                        }
+                        None => panic!("expected edge_rhs"),
+                    }
+                }
+                _ => panic!("expected EdgeStmt"),
+            }
+            assert_eq!(stmt_list.stmt_list, None);
+        }
+        None => panic!("expected stmt_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
 }
 
 #[derive(Debug, PartialEq)]
