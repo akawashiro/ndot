@@ -7,11 +7,43 @@ struct ID {
 
 const RESERVED_WORDS: [&str; 6] = ["node", "edge", "graph", "digraph", "subgraph", "strict"];
 
-fn valid_as_id(token: &String) -> bool {
+fn is_reserved_word(token: &String) -> bool {
     for reserved_word in RESERVED_WORDS.iter() {
         if token.to_lowercase() == reserved_word.to_string() {
+            return true;
+        }
+    }
+    false
+}
+
+fn is_double_quoted(token: &String) -> bool {
+    if token.len() < 2 {
+        return false;
+    }
+    if !(token.chars().next().unwrap() == '"' && token.chars().last().unwrap() == '"') {
+        return false;
+    }
+    let content = token
+        .chars()
+        .skip(1)
+        .take(token.len() - 2)
+        .collect::<String>();
+    let mut last_char = ' ';
+    for c in content.chars() {
+        if last_char != '\\' && c == '"' {
             return false;
         }
+        last_char = c;
+    }
+    true
+}
+
+fn valid_as_id(token: &String) -> bool {
+    if is_reserved_word(token) {
+        return false;
+    }
+    if is_double_quoted(token) {
+        return true;
     }
     token.chars().all(|c| c.is_alphanumeric())
         && token.chars().next().unwrap_or(' ').is_alphabetic()
@@ -84,6 +116,12 @@ fn test_parse_id_eq_stmt() {
     let tokens = tokenize("a b".to_string());
     let result = parse_id_eq_stmt(&tokens);
     assert!(result.is_err());
+
+    let tokens = tokenize("a=\"b\"".to_string());
+    let (id_eq_stmt, rest) = parse_id_eq_stmt(&tokens).unwrap();
+    assert_eq!(id_eq_stmt.id_left.name, "a");
+    assert_eq!(id_eq_stmt.id_right.name, "\"b\"");
+    assert_eq!(rest, vec![] as Vec<String>);
 }
 
 #[derive(Debug, PartialEq)]
@@ -227,23 +265,25 @@ fn test_parse_edge_stmt_rhs() {
 fn parse_edge_stmt(tokens: &Vec<String>) -> Result<(EdgeStmt, Vec<String>), String> {
     let (edge_edge, rest) = parse_edge_stmt_edge(tokens)?;
     let try_rhs = parse_edge_stmt_rhs(&rest);
-    if let Ok((edge_rhs, rest)) = try_rhs {
-        return Ok((
-            EdgeStmt {
-                edge_edge,
-                edge_rhs: Some(Box::new(edge_rhs)),
-            },
-            rest,
-        ));
+    let (edge_rhs, rest) = if let Ok((edge_rhs, rest)) = try_rhs {
+        (Some(Box::new(edge_rhs)), rest)
     } else {
-        return Ok((
-            EdgeStmt {
-                edge_edge,
-                edge_rhs: None,
-            },
-            rest,
-        ));
-    }
+        (None, rest)
+    };
+    let try_attr_list = parse_attr_list(&rest);
+    let (attr_list, rest) = if let Ok((attr_list, rest)) = try_attr_list {
+        (Some(attr_list), rest)
+    } else {
+        (None, rest)
+    };
+    Ok((
+        EdgeStmt {
+            edge_edge,
+            edge_rhs,
+            attr_list,
+        },
+        rest,
+    ))
 }
 
 #[test]
@@ -320,7 +360,39 @@ fn test_parse_edge_stmt() {
     }
     assert_eq!(rest, vec!["}".to_string()]);
 
-    let tokens = tokenize("a -> b[label=\"0.2\",weight=\"0.2\"];".to_string());
+    let tokens = tokenize("a -> b[label=\"0.2\"];".to_string());
+    let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
+    match edge_stmt.edge_edge {
+        EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+    }
+    match edge_stmt.edge_rhs {
+        Some(rhs) => {
+            match rhs.edge_egdge {
+                EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+            }
+            match rhs.edge_op {
+                EdgeStmtOp::Directed => {}
+                _ => panic!("expected directed"),
+            }
+            assert_eq!(rhs.edge_rhs, None);
+            match edge_stmt.attr_list {
+                Some(attr_list) => {
+                    match attr_list.a_list {
+                        Some(a_list) => {
+                            assert_eq!(a_list.id_left.name, "label");
+                            assert_eq!(a_list.id_right.name, "\"0.2\"");
+                            assert_eq!(a_list.a_list, None);
+                        }
+                        None => panic!("expected a_list"),
+                    }
+                    assert_eq!(attr_list.attr_list, None);
+                }
+                None => panic!("expected attr_list. rest={:?}", rest),
+            }
+        }
+        None => panic!("expected edge_rhs"),
+    }
+    assert_eq!(rest, vec![";".to_string()]);
 }
 
 #[derive(Debug, PartialEq)]
@@ -784,7 +856,12 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
         head_a_list = Some(h);
     }
     if rest[0] != "]" {
-        return Err(format!("{}:{} Expected ']' rest={:?}", file!(), line!(), rest));
+        return Err(format!(
+            "{}:{} Expected ']' rest={:?}",
+            file!(),
+            line!(),
+            rest
+        ));
     }
     rest = rest[1..].to_vec();
     let try_attr_list = parse_attr_list(&rest);
