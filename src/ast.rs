@@ -928,3 +928,12 @@ fn test_parse_attr_list() {
     assert_eq!(attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
+
+fn parse_subgraph() {
+    panic!("not implemented")
+}
+
+#[test]
+fn test_parse_subgraph() {
+    panic!("not implemented")
+}
