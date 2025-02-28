@@ -83,14 +83,17 @@ struct IDEqStmt {
 }
 
 fn parse_id_eq_stmt(tokens: &Vec<String>) -> Result<(IDEqStmt, Vec<String>), String> {
-    let (id_left, rest) = parse_id(tokens)?;
-    if rest.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
+    let (id_left, mut rest) = parse_id(tokens)?;
+    let try_equal = parse_keyword(&rest, "=");
+    match try_equal {
+        Ok(r) => {
+            rest = r;
+        }
+        Err(e) => {
+            return Err(e);
+        }
     }
-    if rest[0] != "=" {
-        return Err(format!("{}:{} Expected '='", file!(), line!()));
-    }
-    let (id_right, rest) = parse_id(&rest[1..].to_vec())?;
+    let (id_right, rest) = parse_id(&rest)?;
     Ok((IDEqStmt { id_left, id_right }, rest))
 }
 
@@ -593,12 +596,22 @@ pub struct Graph {
     stmt_list: StmtList,
 }
 
+fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<Vec<String>, String> {
+    if tokens.len() == 0 {
+        return Err(format!("{}:{} No tokens", file!(), line!()));
+    }
+    if tokens[0].to_lowercase() != keyword {
+        return Err(format!("{}:{} Expected {}", file!(), line!(), keyword));
+    }
+    Ok(tokens[1..].to_vec())
+}
+
 pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
     let mut rest = tokens.clone();
     let mut strict = false;
-    if rest.len() > 0 && rest[0].to_lowercase() == "strict" {
+    if let Ok(rest_) = parse_keyword(&rest, "strict") {
         strict = true;
-        rest = rest[1..].to_vec();
+        rest = rest_;
     }
     if rest.len() == 0 {
         return Err(format!("{}:{} No tokens", file!(), line!()));
