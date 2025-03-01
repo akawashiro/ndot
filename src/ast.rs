@@ -723,27 +723,23 @@ struct AList {
     a_list: Option<Box<AList>>,
 }
 
-fn skip_semicolon_or_camma(tokens: &Vec<String>) -> Vec<String> {
-    if tokens.len() == 0 {
+fn skip<T>(tokens: &Vec<String>, parse_fn: fn(&Vec<String>) -> Result<(T, Vec<String>), String>) -> Vec<String> {
+    if let Ok((_, rest)) = parse_fn(tokens){
+        return rest;
+    }else{
         return tokens.clone();
-    }
-    match tokens[0].as_str() {
-        ";" => tokens[1..].to_vec(),
-        "," => tokens[1..].to_vec(),
-        _ => tokens.clone(),
     }
 }
 
 fn parse_a_list(tokens: &Vec<String>) -> Result<(AList, Vec<String>), String> {
     let (id_left, rest) = parse_id(tokens)?;
-    if rest.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
-    if rest[0] != "=" {
-        return Err(format!("{}:{} Expected '='", file!(), line!()));
-    }
-    let (id_right, mut rest) = parse_id(&rest[1..].to_vec())?;
-    rest = skip_semicolon_or_camma(&rest);
+    let rest = parse_keyword(&rest, "=")?;
+    let (id_right, rest) = parse_id(&rest)?;
+
+    let parse_semicolon_or_camma = |tokens: &Vec<String>| -> Result<(String, Vec<String>), String> {
+        parse_keyword_list_or(tokens, &[";", ","].to_vec())
+    };
+    let rest = skip(&rest, parse_semicolon_or_camma);
     let try_a_list = parse_a_list(&rest);
     match try_a_list {
         Ok((a_list, rest)) => {
