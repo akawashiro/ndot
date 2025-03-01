@@ -415,11 +415,22 @@ fn test_parse_edge_stmt() {
 
 #[derive(Debug, PartialEq)]
 enum Stmt {
-    IDEqStmt(IDEqStmt),
+    NodeStmt(NodeStmt),
     EdgeStmt(EdgeStmt),
+    AttrStmt(AttrStmt),
+    IDEqStmt(IDEqStmt),
+    Subgraph(Box<Subgraph>),
 }
 
 fn parse_stmt(tokens: &Vec<String>) -> Result<(Stmt, Vec<String>), String> {
+    let try_attr_stmt = parse_attr_stmt(tokens);
+    if let Ok((attr_stmt, rest)) = try_attr_stmt {
+        return Ok((Stmt::AttrStmt(attr_stmt), rest));
+    }
+    let try_subgraph = parse_subgraph(tokens);
+    if let Ok((subgraph, rest)) = try_subgraph {
+        return Ok((Stmt::Subgraph(Box::new(subgraph)), rest));
+    }
     let try_id_eq_stmt = parse_id_eq_stmt(tokens);
     if let Ok((id_eq_stmt, rest)) = try_id_eq_stmt {
         return Ok((Stmt::IDEqStmt(id_eq_stmt), rest));
@@ -428,6 +439,12 @@ fn parse_stmt(tokens: &Vec<String>) -> Result<(Stmt, Vec<String>), String> {
     if let Ok((edge_stmt, rest)) = try_edge_stmt {
         return Ok((Stmt::EdgeStmt(edge_stmt), rest));
     }
+    // TODO: We cannot recognize difference between node_stmt and id_eq_stmt.
+    let try_node_stmt = parse_node_stmt(tokens);
+    if let Ok((node_stmt, rest)) = try_node_stmt {
+        return Ok((Stmt::NodeStmt(node_stmt), rest));
+    }
+
     Err(format!(
         "{}:{} Expected stmt. tokens={:?}",
         file!(),
@@ -473,6 +490,24 @@ fn test_parse_stmt() {
             }
         }
         _ => panic!("expected EdgeStmt"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize("subgraph sub { a = b }".to_string());
+    let (stmt, rest) = parse_stmt(&tokens).unwrap();
+    match stmt {
+        Stmt::Subgraph(subgraph) => {
+            assert_eq!(subgraph.id.unwrap().name, "sub");
+            match subgraph.stmt_list.stmt {
+                Stmt::IDEqStmt(id_eq_stmt) => {
+                    assert_eq!(id_eq_stmt.id_left.name, "a");
+                    assert_eq!(id_eq_stmt.id_right.name, "b");
+                }
+                _ => panic!("expected IDEqStmt"),
+            }
+            assert_eq!(subgraph.stmt_list.stmt_list, None);
+        }
+        _ => panic!("expected Subgraph {:?}", stmt),
     }
     assert_eq!(rest, vec![] as Vec<String>);
 }
@@ -734,6 +769,57 @@ fn test_parse_graph() {
     }
     assert_eq!(graph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"digraph {
+    subgraph cluster_0 {
+        label="Subgraph A";
+        a -> b;
+    }"#.to_string());
+    let (graph, rest) = parse_graph(&tokens).unwrap();
+    assert_eq!(graph.strict, false);
+    assert_eq!(graph.is_digraph, true);
+    match graph.stmt_list.stmt {
+        Stmt::Subgraph(subgraph) => {
+            assert_eq!(subgraph.id.unwrap().name, "cluster_0");
+            match subgraph.stmt_list.stmt {
+                Stmt::IDEqStmt(id_eq_stmt) => {
+                    assert_eq!(id_eq_stmt.id_left.name, "label");
+                    assert_eq!(id_eq_stmt.id_right.name, "\"Subgraph A\"");
+                }
+                _ => panic!("expected IDEqStmt"),
+            }
+            match subgraph.stmt_list.stmt_list {
+                Some(stmt_list) => {
+                    match stmt_list.stmt {
+                        Stmt::EdgeStmt(edge_stmt) => {
+                            match edge_stmt.edge_edge {
+                                EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                                _ => panic!("expected NodeID"),
+                            }
+                            match edge_stmt.edge_rhs {
+                                Some(rhs) => {
+                                    match rhs.edge_egdge {
+                                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                                        _ => panic!("expected NodeID"),
+                                    }
+                                    match rhs.edge_op {
+                                        EdgeStmtOp::Directed => {}
+                                        _ => panic!("expected directed"),
+                                    }
+                                    assert_eq!(rhs.edge_rhs, None);
+                                }
+                                None => panic!("expected edge_rhs"),
+                            }
+                        }
+                        _ => panic!("expected EdgeStmt"),
+                    }
+                    assert_eq!(stmt_list.stmt_list, None);
+                }
+                None => panic!("expected stmt_list"),
+            }
+        }
+        _ => panic!("expected Subgraph"),
+    }
 }
 
 #[derive(Debug, PartialEq)]
