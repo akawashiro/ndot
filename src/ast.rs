@@ -121,8 +121,8 @@ fn test_parse_id_eq_stmt() {
 
 #[derive(Debug, PartialEq)]
 enum EdgeStmtEdge {
-    // TODO: We can take subgraph as the left side of the edge.
     NodeID(ID),
+    Subgraph(Box<Subgraph>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -146,8 +146,13 @@ struct EdgeStmt {
 }
 
 fn parse_edge_stmt_edge(tokens: &Vec<String>) -> Result<(EdgeStmtEdge, Vec<String>), String> {
-    let (id, rest) = parse_id(tokens)?;
-    Ok((EdgeStmtEdge::NodeID(id), rest))
+    let (id, rest) = parse_try(tokens, parse_id)?;
+    if let Some(id) = id {
+        return Ok((EdgeStmtEdge::NodeID(id), rest));
+    } else {
+        let (subgraph, rest) = parse_subgraph(tokens)?;
+        return Ok((EdgeStmtEdge::Subgraph(Box::new(subgraph)), rest));
+    }
 }
 
 #[test]
@@ -156,6 +161,7 @@ fn test_parse_edge_stmt_edge() {
     let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
     match edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     assert_eq!(rest, vec![] as Vec<String>);
 }
@@ -230,6 +236,7 @@ fn test_parse_edge_stmt_rhs() {
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
     match edge_rhs.edge_egdge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_rhs.edge_op {
         EdgeStmtOp::Undirected => {}
@@ -241,6 +248,7 @@ fn test_parse_edge_stmt_rhs() {
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
     match edge_rhs.edge_egdge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_rhs.edge_op {
         EdgeStmtOp::Undirected => {}
@@ -250,6 +258,7 @@ fn test_parse_edge_stmt_rhs() {
         Some(rhs) => {
             match rhs.edge_egdge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                _ => panic!("expected NodeID"),
             }
             match rhs.edge_op {
                 EdgeStmtOp::Undirected => {}
@@ -292,11 +301,13 @@ fn test_parse_edge_stmt() {
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
     match edge_stmt.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
             match rhs.edge_egdge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                _ => panic!("expected NodeID"),
             }
             match rhs.edge_op {
                 EdgeStmtOp::Undirected => {}
@@ -312,11 +323,13 @@ fn test_parse_edge_stmt() {
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
     match edge_stmt.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
             match rhs.edge_egdge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                _ => panic!("expected NodeID"),
             }
             match rhs.edge_op {
                 EdgeStmtOp::Undirected => {}
@@ -326,6 +339,7 @@ fn test_parse_edge_stmt() {
                 Some(rhs) => {
                     match rhs.edge_egdge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "c"),
+                        _ => panic!("expected NodeID"),
                     }
                     match rhs.edge_op {
                         EdgeStmtOp::Undirected => {}
@@ -344,11 +358,13 @@ fn test_parse_edge_stmt() {
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
     match edge_stmt.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
             match rhs.edge_egdge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                _ => panic!("expected NodeID"),
             }
             match rhs.edge_op {
                 EdgeStmtOp::Directed => {}
@@ -364,11 +380,13 @@ fn test_parse_edge_stmt() {
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
     match edge_stmt.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+        _ => panic!("expected NodeID"),
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
             match rhs.edge_egdge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                _ => panic!("expected NodeID"),
             }
             match rhs.edge_op {
                 EdgeStmtOp::Directed => {}
@@ -437,11 +455,13 @@ fn test_parse_stmt() {
         Stmt::EdgeStmt(edge_stmt) => {
             match edge_stmt.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                _ => panic!("expected NodeID"),
             }
             match edge_stmt.edge_rhs {
                 Some(rhs) => {
                     match rhs.edge_egdge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                        _ => panic!("expected NodeID"),
                     }
                     match rhs.edge_op {
                         EdgeStmtOp::Undirected => {}
@@ -510,11 +530,13 @@ fn test_parse_stmt_list() {
                 Stmt::EdgeStmt(edge_stmt) => {
                     match edge_stmt.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                        _ => panic!("expected NodeID"),
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
                             match rhs.edge_egdge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                                _ => panic!("expected NodeID"),
                             }
                             match rhs.edge_op {
                                 EdgeStmtOp::Undirected => {}
@@ -552,11 +574,13 @@ a -- b;"#
                 Stmt::EdgeStmt(edge_stmt) => {
                     match edge_stmt.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                        _ => panic!("expected NodeID"),
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
                             match rhs.edge_egdge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                                _ => panic!("expected NodeID"),
                             }
                             match rhs.edge_op {
                                 EdgeStmtOp::Undirected => {}
@@ -619,8 +643,7 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
     } else {
         false
     };
-    let (graph_or_digraph, rest) =
-        parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
+    let (graph_or_digraph, rest) = parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
     let is_digraph = graph_or_digraph == "digraph";
     let (try_id, rest) = parse_try(&rest, parse_id)?;
     let id = if let Some(id) = try_id {
@@ -668,11 +691,13 @@ fn test_parse_graph() {
                 Stmt::EdgeStmt(edge_stmt) => {
                     match edge_stmt.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                        _ => panic!("expected NodeID"),
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
                             match rhs.edge_egdge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                                _ => panic!("expected NodeID"),
                             }
                             match rhs.edge_op {
                                 EdgeStmtOp::Undirected => {}
@@ -930,9 +955,7 @@ fn parse_subgraph(tokens: &Vec<String>) -> Result<(Subgraph, Vec<String>), Strin
 
 #[test]
 fn test_parse_subgraph() {
-    let tokens = tokenize(
-        r#"subgraph sub { a = b }"#
-            .to_string());
+    let tokens = tokenize(r#"subgraph sub { a = b }"#.to_string());
     let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
     assert_eq!(subgraph.id.unwrap().name, "sub");
     match subgraph.stmt_list.stmt {
@@ -945,9 +968,7 @@ fn test_parse_subgraph() {
     assert_eq!(subgraph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 
-    let tokens = tokenize(
-        r#"subgraph { a = b }"#
-            .to_string());
+    let tokens = tokenize(r#"subgraph { a = b }"#.to_string());
     let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
     assert_eq!(subgraph.id, None);
     match subgraph.stmt_list.stmt {
@@ -960,9 +981,7 @@ fn test_parse_subgraph() {
     assert_eq!(subgraph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 
-    let tokens = tokenize(
-        r#"{ a = b }"#
-            .to_string());
+    let tokens = tokenize(r#"{ a = b }"#.to_string());
     let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
     assert_eq!(subgraph.id, None);
     match subgraph.stmt_list.stmt {
