@@ -811,7 +811,7 @@ fn test_parse_graph() {
     subgraph cluster_0 {
         label="Subgraph A";
         a -> b;
-    }"#
+    }}"#
         .to_string(),
     );
     let (graph, rest) = parse_graph(&tokens).unwrap();
