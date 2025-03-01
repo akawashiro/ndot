@@ -86,7 +86,7 @@ fn parse_id_eq_stmt(tokens: &Vec<String>) -> Result<(IDEqStmt, Vec<String>), Str
     let (id_left, mut rest) = parse_id(tokens)?;
     let try_equal = parse_keyword(&rest, "=");
     match try_equal {
-        Ok(r) => {
+        Ok((_, r)) => {
             rest = r;
         }
         Err(e) => {
@@ -169,13 +169,18 @@ fn test_parse_edge_stmt_edge() {
 }
 
 fn parse_edge_stmt_op(tokens: &Vec<String>) -> Result<(EdgeStmtOp, Vec<String>), String> {
-    if tokens.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
-    match tokens[0].as_str() {
-        "--" => Ok((EdgeStmtOp::Undirected, tokens[1..].to_vec())),
-        "->" => Ok((EdgeStmtOp::Directed, tokens[1..].to_vec())),
-        _ => Err(format!("{}:{} Expected edge operator", file!(), line!())),
+    let (keyword, rest) = parse_keyword_list_or(tokens, &["--", "->"].to_vec())?;
+    if keyword == "--" {
+        return Ok((EdgeStmtOp::Undirected, rest));
+    } else if keyword == "->" {
+        return Ok((EdgeStmtOp::Directed, rest));
+    } else {
+        return Err(format!(
+            "{}:{} Invalid edge op: {}",
+            file!(),
+            line!(),
+            keyword
+        ));
     }
 }
 
@@ -466,22 +471,13 @@ struct StmtList {
     stmt_list: Option<Box<StmtList>>,
 }
 
-fn parse_semicolon(tokens: &Vec<String>) -> Result<Vec<String>, String> {
-    if tokens.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
-    if tokens[0] != ";" {
-        return Err(format!("{}:{} Expected ';'", file!(), line!()));
-    }
-    Ok(tokens[1..].to_vec())
+fn parse_semicolon(tokens: &Vec<String>) -> Result<(String, Vec<String>), String> {
+    parse_keyword(tokens, ";")
 }
 
 fn parse_stmt_list(tokens: &Vec<String>) -> Result<(StmtList, Vec<String>), String> {
     let (stmt, mut rest) = parse_stmt(tokens)?;
-    let try_semicolon = parse_semicolon(&rest);
-    if let Ok(r) = try_semicolon {
-        rest = r;
-    }
+    let rest = parse_skip(&rest, parse_semicolon);
     let try_stmt_list = parse_stmt_list(&rest);
     match try_stmt_list {
         Ok((stmt_list, rest)) => {
@@ -596,14 +592,14 @@ pub struct Graph {
     stmt_list: StmtList,
 }
 
-fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<Vec<String>, String> {
+fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<(String, Vec<String>), String> {
     if tokens.len() == 0 {
         return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     if tokens[0].to_lowercase() != keyword {
         return Err(format!("{}:{} Expected {}", file!(), line!(), keyword));
     }
-    Ok(tokens[1..].to_vec())
+    Ok((keyword.to_string(), tokens[1..].to_vec()))
 }
 
 fn parse_keyword_list_or(
@@ -612,7 +608,7 @@ fn parse_keyword_list_or(
 ) -> Result<(String, Vec<String>), String> {
     for keyword in keywords.iter() {
         let try_rest = parse_keyword(tokens, keyword);
-        if let Ok(rest) = try_rest {
+        if let Ok((_, rest)) = try_rest {
             return Ok((keyword.to_string(), rest));
         }
     }
@@ -627,7 +623,7 @@ fn parse_keyword_list_or(
 pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
     let mut rest = tokens.clone();
     let mut strict = false;
-    if let Ok(rest_) = parse_keyword(&rest, "strict") {
+    if let Ok((_, rest_)) = parse_keyword(&rest, "strict") {
         strict = true;
         rest = rest_;
     }
@@ -642,9 +638,9 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
         }
         Err(_) => None,
     };
-    let rest = parse_keyword(&rest, "{")?;
+    let (_, rest) = parse_keyword(&rest, "{")?;
     let (stmt_list, rest) = parse_stmt_list(&rest)?;
-    let rest = parse_keyword(&rest, "}")?;
+    let (_, rest) = parse_keyword(&rest, "}")?;
 
     Ok((
         Graph {
@@ -745,7 +741,7 @@ fn parse_skip<T>(
 
 fn parse_a_list(tokens: &Vec<String>) -> Result<(AList, Vec<String>), String> {
     let (id_left, rest) = parse_id(tokens)?;
-    let rest = parse_keyword(&rest, "=")?;
+    let (_, rest) = parse_keyword(&rest, "=")?;
     let (id_right, rest) = parse_id(&rest)?;
 
     let parse_semicolon_or_camma = |tokens: &Vec<String>| -> Result<(String, Vec<String>), String> {
@@ -851,9 +847,9 @@ fn parse_try<T>(
 }
 
 fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), String> {
-    let rest = parse_keyword(&tokens, "[")?;
+    let (_, rest) = parse_keyword(&tokens, "[")?;
     let (head_a_list, rest) = parse_try(&rest, parse_a_list)?;
-    let rest = parse_keyword(&rest, "]")?;
+    let (_, rest) = parse_keyword(&rest, "]")?;
     let (attr_list, rest) = parse_try(&rest, parse_attr_list)?;
     if let Some(attr_list) = attr_list {
         return Ok((
@@ -863,7 +859,7 @@ fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), Stri
             },
             rest,
         ));
-    }else{
+    } else {
         return Ok((
             AttrList {
                 a_list: head_a_list,
