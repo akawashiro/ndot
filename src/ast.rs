@@ -909,8 +909,13 @@ struct Subgraph {
 }
 
 fn parse_subgraph(tokens: &Vec<String>) -> Result<(Subgraph, Vec<String>), String> {
-    let rest = parse_skip(tokens, |tokens| parse_keyword(tokens, "subgraph"));
-    let (try_id, rest) = parse_try(&rest, parse_id)?;
+    let (try_subgraph, rest) = parse_try(tokens, |tokens| parse_keyword(tokens, "subgraph"))?;
+    // When and only when we have subgraph keyword, we have to try to parse ID.
+    let (try_id, rest) = if let Some(_) = try_subgraph {
+        parse_try(&rest, parse_id)?
+    } else {
+        (None, rest)
+    };
     let (_, rest) = parse_keyword(&rest, "{")?;
     let (stmt_list, rest) = parse_stmt_list(&rest)?;
     let (_, rest) = parse_keyword(&rest, "}")?;
@@ -930,6 +935,36 @@ fn test_parse_subgraph() {
             .to_string());
     let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
     assert_eq!(subgraph.id.unwrap().name, "sub");
+    match subgraph.stmt_list.stmt {
+        Stmt::IDEqStmt(id_eq_stmt) => {
+            assert_eq!(id_eq_stmt.id_left.name, "a");
+            assert_eq!(id_eq_stmt.id_right.name, "b");
+        }
+        _ => panic!("expected IDEqStmt"),
+    }
+    assert_eq!(subgraph.stmt_list.stmt_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(
+        r#"subgraph { a = b }"#
+            .to_string());
+    let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
+    assert_eq!(subgraph.id, None);
+    match subgraph.stmt_list.stmt {
+        Stmt::IDEqStmt(id_eq_stmt) => {
+            assert_eq!(id_eq_stmt.id_left.name, "a");
+            assert_eq!(id_eq_stmt.id_right.name, "b");
+        }
+        _ => panic!("expected IDEqStmt"),
+    }
+    assert_eq!(subgraph.stmt_list.stmt_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(
+        r#"{ a = b }"#
+            .to_string());
+    let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
+    assert_eq!(subgraph.id, None);
     match subgraph.stmt_list.stmt {
         Stmt::IDEqStmt(id_eq_stmt) => {
             assert_eq!(id_eq_stmt.id_left.name, "a");
