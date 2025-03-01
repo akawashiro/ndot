@@ -71,9 +71,14 @@ fn test_parse_id() {
     assert_eq!(id.name, "a");
     assert_eq!(rest, vec!["b".to_string()]);
 
-    let tokens = vec!["1".to_string(), "b".to_string()];
+    let tokens = tokenize("1 b".to_string());
     let result = parse_id(&tokens);
     assert!(result.is_err());
+
+    let tokens = tokenize("cluster_0".to_string());
+    let (id, rest) = parse_id(&tokens).unwrap();
+    assert_eq!(id.name, "cluster_0");
+    assert_eq!(rest, vec![] as Vec<String>);
 }
 
 #[derive(Debug, PartialEq)]
