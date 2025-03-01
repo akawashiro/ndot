@@ -606,6 +606,16 @@ fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<Vec<String>, Str
     Ok(tokens[1..].to_vec())
 }
 
+fn parse_keyword_list_or(tokens: &Vec<String>, keywords: &Vec<&str>) -> Result<(String, Vec<String>), String> {
+    for keyword in keywords.iter() {
+        let try_rest = parse_keyword(tokens, keyword);
+        if let Ok(rest) = try_rest {
+            return Ok((keyword.to_string(), rest));
+        }
+    }
+    Err(format!("{}:{} Expected one of {:?}", file!(), line!(), keywords))
+}
+
 pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
     let mut rest = tokens.clone();
     let mut strict = false;
@@ -613,18 +623,8 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
         strict = true;
         rest = rest_;
     }
-    if rest.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
-    let is_digraph = match rest[0].to_lowercase().as_str() {
-        "graph" => false,
-        "digraph" => true,
-        _ => return Err(format!("{}:{} Expected graph or digraph", file!(), line!())),
-    };
-    rest = rest[1..].to_vec();
-    if rest.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
+    let (graph_or_digraph, mut rest) = parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
+    let is_digraph = graph_or_digraph == "digraph";
     let try_id = parse_id(&rest);
     let id = match try_id {
         Ok((id, r)) => {
@@ -633,37 +633,10 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
         }
         Err(_) => None,
     };
-    match rest[0].as_str() {
-        "{" => {}
-        _ => {
-            return Err(format!(
-                "{}:{} Expected {{ rest:{:?}",
-                file!(),
-                line!(),
-                rest
-            ))
-        }
-    }
-    rest = rest[1..].to_vec();
-    if rest.len() == 0 {
-        return Err(format!("{}:{} Expected {{", file!(), line!()));
-    }
-    let (stmt_list, mut rest) = parse_stmt_list(&rest[0..].to_vec())?;
-    if rest.len() == 0 {
-        return Err(format!("{}:{} Expected {{", file!(), line!()));
-    }
-    match rest[0].as_str() {
-        "}" => {}
-        _ => {
-            return Err(format!(
-                "{}:{} Expected '}}' rest:{:?}",
-                file!(),
-                line!(),
-                rest
-            ))
-        }
-    }
-    rest = rest[1..].to_vec();
+    let rest = parse_keyword(&rest, "{")?;
+    let (stmt_list, rest) = parse_stmt_list(&rest)?;
+    let rest = parse_keyword(&rest, "}")?;
+
     Ok((
         Graph {
             strict,
