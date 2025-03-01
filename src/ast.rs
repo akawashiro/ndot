@@ -994,3 +994,54 @@ fn test_parse_subgraph() {
     assert_eq!(subgraph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
+
+#[derive(Debug, PartialEq)]
+struct NodeStmt {
+    id: ID,
+    attr_list: Option<AttrList>,
+}
+
+fn parse_node_stmt(tokens: &Vec<String>) -> Result<(NodeStmt, Vec<String>), String> {
+    let (id, rest) = parse_id(tokens)?;
+    let try_attr_list = parse_attr_list(&rest);
+    let (attr_list, rest) = if let Ok((attr_list, rest)) = try_attr_list {
+        (Some(attr_list), rest)
+    } else {
+        (None, rest)
+    };
+    Ok((
+        NodeStmt {
+            id,
+            attr_list,
+        },
+        rest,
+    ))
+}
+
+#[test]
+fn test_parse_node_stmt() {
+    let tokens = tokenize("a".to_string());
+    let (node_stmt, rest) = parse_node_stmt(&tokens).unwrap();
+    assert_eq!(node_stmt.id.name, "a");
+    assert_eq!(node_stmt.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize("a [label=\"0.2\"]".to_string());
+    let (node_stmt, rest) = parse_node_stmt(&tokens).unwrap();
+    assert_eq!(node_stmt.id.name, "a");
+    match node_stmt.attr_list {
+        Some(attr_list) => {
+            match attr_list.a_list {
+                Some(a_list) => {
+                    assert_eq!(a_list.id_left.name, "label");
+                    assert_eq!(a_list.id_right.name, "\"0.2\"");
+                    assert_eq!(a_list.a_list, None);
+                }
+                None => panic!("expected a_list"),
+            }
+            assert_eq!(attr_list.attr_list, None);
+        }
+        None => panic!("expected attr_list"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
