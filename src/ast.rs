@@ -934,6 +934,53 @@ graph {
         .to_string(),
     );
     let (graph, rest) = parse_graph(&tokens).unwrap();
+    assert_eq!(graph.strict, false);
+    assert_eq!(graph.is_digraph, false);
+    match graph.stmt_list.stmt {
+        Stmt::EdgeStmt(edge_stmt) => {
+            match edge_stmt.edge_edge {
+                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
+                _ => panic!("expected NodeID"),
+            }
+            match edge_stmt.edge_rhs {
+                Some(rhs) => {
+                    match rhs.edge_egdge {
+                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
+                        _ => panic!("expected NodeID"),
+                    }
+                    match rhs.edge_op {
+                        EdgeStmtOp::Undirected => {}
+                        _ => panic!("expected undirected"),
+                    }
+                    assert_eq!(rhs.edge_rhs, None);
+                    match edge_stmt.attr_list {
+                        Some(attr_list) => {
+                            match attr_list.a_list {
+                                Some(a_list) => {
+                                    assert_eq!(a_list.id_left.name, "color");
+                                    assert_eq!(a_list.id_right.name, "red");
+                                    match a_list.a_list {
+                                        Some(a_list) => {
+                                            assert_eq!(a_list.id_left.name, "penwidth");
+                                            assert_eq!(a_list.id_right.name, "3.0");
+                                            assert_eq!(a_list.a_list, None);
+                                        }
+                                        None => panic!("expected a_list"),
+                                    }
+                                }
+                                None => panic!("expected a_list"),
+                            }
+                            assert_eq!(attr_list.attr_list, None);
+                        }
+                        None => panic!("expected attr_list"),
+                    }
+                }
+                None => panic!("expected edge_rhs"),
+            }
+        }
+        _ => panic!("expected EdgeStmt"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
 }
 
 #[derive(Debug, PartialEq)]
