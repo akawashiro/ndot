@@ -23,6 +23,30 @@ fn is_alphanumeric_id(token: &String) -> bool {
         && token.chars().next().unwrap_or(' ').is_alphabetic()
 }
 
+// a numeral [-]?(.[0-9]⁺ | [0-9]⁺(.[0-9]*)? );
+fn is_number(token: &String) -> bool {
+    let mut chars = token.chars();
+    let first_char = chars.next().unwrap();
+    if first_char == '-' {
+        return is_number(&chars.collect::<String>());
+    }
+    let mut has_dot = false;
+    let mut has_number = false;
+    for c in token.chars() {
+        if c == '.' {
+            if has_dot {
+                return false;
+            }
+            has_dot = true;
+        } else if c.is_numeric() {
+            has_number = true;
+        } else {
+            return false;
+        }
+    }
+    has_number
+}
+
 fn is_double_quoted(token: &String) -> bool {
     if token.len() < 2 {
         return false;
@@ -55,6 +79,9 @@ fn valid_as_id(token: &String) -> bool {
     if is_alphanumeric_id(token) {
         return true;
     }
+    if is_number(token) {
+        return true;
+    }
     false
 }
 
@@ -79,10 +106,6 @@ fn test_parse_id() {
     let (id, rest) = parse_id(&tokens).unwrap();
     assert_eq!(id.name, "a");
     assert_eq!(rest, vec!["b".to_string()]);
-
-    let tokens = tokenize("1 b".to_string());
-    let result = parse_id(&tokens);
-    assert!(result.is_err());
 
     let tokens = tokenize("cluster_0".to_string());
     let (id, rest) = parse_id(&tokens).unwrap();
@@ -662,7 +685,13 @@ fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<(String, Vec<Str
         return Err(format!("{}:{} No tokens", file!(), line!()));
     }
     if tokens[0].to_lowercase() != keyword {
-        return Err(format!("{}:{} Expected {}", file!(), line!(), keyword));
+        return Err(format!(
+            "{}:{} Expected {}. tokens={:?}",
+            file!(),
+            line!(),
+            keyword,
+            tokens
+        ));
     }
     Ok((keyword.to_string(), tokens[1..].to_vec()))
 }
@@ -874,6 +903,15 @@ fn test_parse_graph() {
         _ => panic!("expected Subgraph"),
     }
     assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(
+        r#"
+graph {
+    a -- b[color=red,penwidth=3.0];
+    }"#
+        .to_string(),
+    );
+    let (graph, rest) = parse_graph(&tokens).unwrap();
 }
 
 #[derive(Debug, PartialEq)]
@@ -930,6 +968,13 @@ fn parse_a_list(tokens: &Vec<String>) -> Result<(AList, Vec<String>), String> {
 
 #[test]
 fn test_parse_a_list() {
+    let tokens = tokenize("penwidth=3.0".to_string());
+    let (a_list, rest) = parse_a_list(&tokens).unwrap();
+    assert_eq!(a_list.id_left.name, "penwidth");
+    assert_eq!(a_list.id_right.name, "3.0");
+    assert_eq!(a_list.a_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
     let tokens = tokenize("a = b".to_string());
     let (a_list, rest) = parse_a_list(&tokens).unwrap();
     assert_eq!(a_list.id_left.name, "a");
