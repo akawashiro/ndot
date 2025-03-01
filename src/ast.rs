@@ -770,11 +770,50 @@ fn test_parse_graph() {
     assert_eq!(graph.stmt_list.stmt_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 
-    let tokens = tokenize(r#"digraph {
+    let tokens = tokenize(r#"digraph { subgraph sub { a -> b } }"#.to_string());
+    let (graph, rest) = parse_graph(&tokens).unwrap();
+    assert_eq!(graph.strict, false);
+    assert_eq!(graph.is_digraph, true);
+    match graph.stmt_list.stmt {
+        Stmt::Subgraph(subgraph) => {
+            assert_eq!(subgraph.id.unwrap().name, "sub");
+            match subgraph.stmt_list.stmt {
+                Stmt::EdgeStmt(edge_stmt) => {
+                    match edge_stmt.edge_edge {
+                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "a"),
+                        _ => panic!("expected NodeID"),
+                    }
+                    match edge_stmt.edge_rhs {
+                        Some(rhs) => {
+                            match rhs.edge_egdge {
+                                EdgeStmtEdge::NodeID(id) => assert_eq!(id.name, "b"),
+                                _ => panic!("expected NodeID"),
+                            }
+                            match rhs.edge_op {
+                                EdgeStmtOp::Directed => {}
+                                _ => panic!("expected directed"),
+                            }
+                            assert_eq!(rhs.edge_rhs, None);
+                        }
+                        None => panic!("expected edge_rhs"),
+                    }
+                }
+                _ => panic!("expected EdgeStmt"),
+            }
+            assert_eq!(subgraph.stmt_list.stmt_list, None);
+        }
+        _ => panic!("expected Subgraph"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(
+        r#"digraph {
     subgraph cluster_0 {
         label="Subgraph A";
         a -> b;
-    }"#.to_string());
+    }"#
+        .to_string(),
+    );
     let (graph, rest) = parse_graph(&tokens).unwrap();
     assert_eq!(graph.strict, false);
     assert_eq!(graph.is_digraph, true);
@@ -820,6 +859,7 @@ fn test_parse_graph() {
         }
         _ => panic!("expected Subgraph"),
     }
+    assert_eq!(rest, vec![] as Vec<String>);
 }
 
 #[derive(Debug, PartialEq)]
@@ -1095,13 +1135,7 @@ fn parse_node_stmt(tokens: &Vec<String>) -> Result<(NodeStmt, Vec<String>), Stri
     } else {
         (None, rest)
     };
-    Ok((
-        NodeStmt {
-            id,
-            attr_list,
-        },
-        rest,
-    ))
+    Ok((NodeStmt { id, attr_list }, rest))
 }
 
 #[test]
