@@ -902,11 +902,41 @@ fn test_parse_attr_list() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-fn parse_subgraph() {
-    panic!("not implemented")
+#[derive(Debug, PartialEq)]
+struct Subgraph {
+    id: Option<ID>,
+    stmt_list: StmtList,
+}
+
+fn parse_subgraph(tokens: &Vec<String>) -> Result<(Subgraph, Vec<String>), String> {
+    let rest = parse_skip(tokens, |tokens| parse_keyword(tokens, "subgraph"));
+    let (try_id, rest) = parse_try(&rest, parse_id)?;
+    let (_, rest) = parse_keyword(&rest, "{")?;
+    let (stmt_list, rest) = parse_stmt_list(&rest)?;
+    let (_, rest) = parse_keyword(&rest, "}")?;
+    Ok((
+        Subgraph {
+            id: try_id,
+            stmt_list,
+        },
+        rest,
+    ))
 }
 
 #[test]
 fn test_parse_subgraph() {
-    panic!("not implemented")
+    let tokens = tokenize(
+        r#"subgraph sub { a = b }"#
+            .to_string());
+    let (subgraph, rest) = parse_subgraph(&tokens).unwrap();
+    assert_eq!(subgraph.id.unwrap().name, "sub");
+    match subgraph.stmt_list.stmt {
+        Stmt::IDEqStmt(id_eq_stmt) => {
+            assert_eq!(id_eq_stmt.id_left.name, "a");
+            assert_eq!(id_eq_stmt.id_right.name, "b");
+        }
+        _ => panic!("expected IDEqStmt"),
+    }
+    assert_eq!(subgraph.stmt_list.stmt_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
 }
