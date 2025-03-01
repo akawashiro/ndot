@@ -606,14 +606,22 @@ fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<Vec<String>, Str
     Ok(tokens[1..].to_vec())
 }
 
-fn parse_keyword_list_or(tokens: &Vec<String>, keywords: &Vec<&str>) -> Result<(String, Vec<String>), String> {
+fn parse_keyword_list_or(
+    tokens: &Vec<String>,
+    keywords: &Vec<&str>,
+) -> Result<(String, Vec<String>), String> {
     for keyword in keywords.iter() {
         let try_rest = parse_keyword(tokens, keyword);
         if let Ok(rest) = try_rest {
             return Ok((keyword.to_string(), rest));
         }
     }
-    Err(format!("{}:{} Expected one of {:?}", file!(), line!(), keywords))
+    Err(format!(
+        "{}:{} Expected one of {:?}",
+        file!(),
+        line!(),
+        keywords
+    ))
 }
 
 pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
@@ -623,7 +631,8 @@ pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String>
         strict = true;
         rest = rest_;
     }
-    let (graph_or_digraph, mut rest) = parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
+    let (graph_or_digraph, mut rest) =
+        parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
     let is_digraph = graph_or_digraph == "digraph";
     let try_id = parse_id(&rest);
     let id = match try_id {
@@ -723,10 +732,13 @@ struct AList {
     a_list: Option<Box<AList>>,
 }
 
-fn skip<T>(tokens: &Vec<String>, parse_fn: fn(&Vec<String>) -> Result<(T, Vec<String>), String>) -> Vec<String> {
-    if let Ok((_, rest)) = parse_fn(tokens){
+fn skip<T>(
+    tokens: &Vec<String>,
+    parse_fn: fn(&Vec<String>) -> Result<(T, Vec<String>), String>,
+) -> Vec<String> {
+    if let Ok((_, rest)) = parse_fn(tokens) {
         return rest;
-    }else{
+    } else {
         return tokens.clone();
     }
 }
@@ -823,35 +835,42 @@ struct AttrList {
     attr_list: Option<Box<AttrList>>,
 }
 
-fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), String> {
-    let mut rest = parse_keyword(&tokens, "[")?;
-    let try_a_list = parse_a_list(&rest);
-    let mut head_a_list = None;
-    if let Ok((h, r)) = try_a_list {
-        rest = r;
-        head_a_list = Some(h);
-    }
-    let rest = parse_keyword(&rest, "]")?;
-    let try_attr_list = parse_attr_list(&rest);
-    match try_attr_list {
-        Ok((attr_list, rest)) => {
-            return Ok((
-                AttrList {
-                    a_list: head_a_list,
-                    attr_list: Some(Box::new(attr_list)),
-                },
-                rest,
-            ));
+fn parse_try<T>(
+    tokens: &Vec<String>,
+    parse_fn: fn(&Vec<String>) -> Result<(T, Vec<String>), String>,
+) -> Result<(Option<T>, Vec<String>), String> {
+    let try_result = parse_fn(tokens);
+    match try_result {
+        Ok((result, rest)) => {
+            return Ok((Some(result), rest));
         }
         Err(_) => {
-            return Ok((
-                AttrList {
-                    a_list: head_a_list,
-                    attr_list: None,
-                },
-                rest,
-            ));
+            return Ok((None, tokens.clone()));
         }
+    }
+}
+
+fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), String> {
+    let rest = parse_keyword(&tokens, "[")?;
+    let (head_a_list, rest) = parse_try(&rest, parse_a_list)?;
+    let rest = parse_keyword(&rest, "]")?;
+    let (attr_list, rest) = parse_try(&rest, parse_attr_list)?;
+    if let Some(attr_list) = attr_list {
+        return Ok((
+            AttrList {
+                a_list: head_a_list,
+                attr_list: Some(Box::new(attr_list)),
+            },
+            rest,
+        ));
+    }else{
+        return Ok((
+            AttrList {
+                a_list: head_a_list,
+                attr_list: None,
+            },
+            rest,
+        ));
     }
 }
 
