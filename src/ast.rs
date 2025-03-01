@@ -16,6 +16,13 @@ fn is_reserved_word(token: &String) -> bool {
     false
 }
 
+// Any string of alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), not
+// beginning with a digit;
+fn is_alphanumeric_id(token: &String) -> bool {
+    token.chars().all(|c| c.is_alphanumeric() || c == '_')
+        && token.chars().next().unwrap_or(' ').is_alphabetic()
+}
+
 fn is_double_quoted(token: &String) -> bool {
     if token.len() < 2 {
         return false;
@@ -45,8 +52,10 @@ fn valid_as_id(token: &String) -> bool {
     if is_double_quoted(token) {
         return true;
     }
-    token.chars().all(|c| c.is_alphanumeric())
-        && token.chars().next().unwrap_or(' ').is_alphabetic()
+    if is_alphanumeric_id(token) {
+        return true;
+    }
+    false
 }
 
 fn parse_id(tokens: &Vec<String>) -> Result<(ID, Vec<String>), String> {

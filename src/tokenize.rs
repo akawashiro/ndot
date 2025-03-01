@@ -18,7 +18,15 @@ fn raw_tokenize_dot(dot_str: String) -> Vec<String> {
                         token.clear();
                     }
                     // We need '\n' to parse C++ style comments
-                    if c == ';' || c == ',' || c == '\n' || c == '[' || c == ']' || c == '=' || c == '{' || c == '}' {
+                    if c == ';'
+                        || c == ','
+                        || c == '\n'
+                        || c == '['
+                        || c == ']'
+                        || c == '='
+                        || c == '{'
+                        || c == '}'
+                    {
                         let t = c.to_string();
                         tokens.push(t);
                     }
