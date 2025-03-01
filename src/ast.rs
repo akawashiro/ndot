@@ -1045,3 +1045,88 @@ fn test_parse_node_stmt() {
     }
     assert_eq!(rest, vec![] as Vec<String>);
 }
+
+#[derive(Debug, PartialEq)]
+enum AttrStmtType {
+    Graph,
+    Node,
+    Edge,
+}
+
+#[derive(Debug, PartialEq)]
+struct AttrStmt {
+    attr_type: AttrStmtType,
+    attr_list: AttrList,
+}
+
+fn parse_attr_stmt(tokens: &Vec<String>) -> Result<(AttrStmt, Vec<String>), String> {
+    let (attr_type, rest) = parse_keyword_list_or(&tokens, &["graph", "node", "edge"].to_vec())?;
+    let (attr_list, rest) = parse_attr_list(&rest)?;
+    let attr_type = match attr_type.as_str() {
+        "graph" => AttrStmtType::Graph,
+        "node" => AttrStmtType::Node,
+        "edge" => AttrStmtType::Edge,
+        _ => panic!("unexpected attr_type"),
+    };
+    Ok((
+        AttrStmt {
+            attr_type,
+            attr_list,
+        },
+        rest,
+    ))
+}
+
+#[test]
+fn test_parse_attr_stmt() {
+    let tokens = tokenize(r#"graph [label="0.2"]"#.to_string());
+    let (attr_stmt, rest) = parse_attr_stmt(&tokens).unwrap();
+    match attr_stmt.attr_type {
+        AttrStmtType::Graph => {}
+        _ => panic!("expected graph"),
+    }
+    match attr_stmt.attr_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "label");
+            assert_eq!(a_list.id_right.name, "\"0.2\"");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(attr_stmt.attr_list.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"node [label="0.2"]"#.to_string());
+    let (attr_stmt, rest) = parse_attr_stmt(&tokens).unwrap();
+    match attr_stmt.attr_type {
+        AttrStmtType::Node => {}
+        _ => panic!("expected node"),
+    }
+    match attr_stmt.attr_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "label");
+            assert_eq!(a_list.id_right.name, "\"0.2\"");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(attr_stmt.attr_list.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(r#"edge [label="0.2"]"#.to_string());
+    let (attr_stmt, rest) = parse_attr_stmt(&tokens).unwrap();
+    match attr_stmt.attr_type {
+        AttrStmtType::Edge => {}
+        _ => panic!("expected edge"),
+    }
+    match attr_stmt.attr_list.a_list {
+        Some(a_list) => {
+            assert_eq!(a_list.id_left.name, "label");
+            assert_eq!(a_list.id_right.name, "\"0.2\"");
+            assert_eq!(a_list.a_list, None);
+        }
+        None => panic!("expected a_list"),
+    }
+    assert_eq!(attr_stmt.attr_list.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+}
