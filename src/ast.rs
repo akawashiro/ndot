@@ -83,16 +83,8 @@ struct IDEqStmt {
 }
 
 fn parse_id_eq_stmt(tokens: &Vec<String>) -> Result<(IDEqStmt, Vec<String>), String> {
-    let (id_left, mut rest) = parse_id(tokens)?;
-    let try_equal = parse_keyword(&rest, "=");
-    match try_equal {
-        Ok((_, r)) => {
-            rest = r;
-        }
-        Err(e) => {
-            return Err(e);
-        }
-    }
+    let (id_left, rest) = parse_id(tokens)?;
+    let (_, rest) = parse_keyword(&rest, "=")?;
     let (id_right, rest) = parse_id(&rest)?;
     Ok((IDEqStmt { id_left, id_right }, rest))
 }
@@ -476,7 +468,7 @@ fn parse_semicolon(tokens: &Vec<String>) -> Result<(String, Vec<String>), String
 }
 
 fn parse_stmt_list(tokens: &Vec<String>) -> Result<(StmtList, Vec<String>), String> {
-    let (stmt, mut rest) = parse_stmt(tokens)?;
+    let (stmt, rest) = parse_stmt(tokens)?;
     let rest = parse_skip(&rest, parse_semicolon);
     let try_stmt_list = parse_stmt_list(&rest);
     match try_stmt_list {
@@ -621,22 +613,20 @@ fn parse_keyword_list_or(
 }
 
 pub fn parse_graph(tokens: &Vec<String>) -> Result<(Graph, Vec<String>), String> {
-    let mut rest = tokens.clone();
-    let mut strict = false;
-    if let Ok((_, rest_)) = parse_keyword(&rest, "strict") {
-        strict = true;
-        rest = rest_;
-    }
-    let (graph_or_digraph, mut rest) =
+    let (try_strict, rest) = parse_try(tokens, |tokens| parse_keyword(tokens, "strict"))?;
+    let strict = if let Some(_) = try_strict {
+        true
+    } else {
+        false
+    };
+    let (graph_or_digraph, rest) =
         parse_keyword_list_or(&rest, &(["graph", "digraph"]).to_vec())?;
     let is_digraph = graph_or_digraph == "digraph";
-    let try_id = parse_id(&rest);
-    let id = match try_id {
-        Ok((id, r)) => {
-            rest = r;
-            Some(id)
-        }
-        Err(_) => None,
+    let (try_id, rest) = parse_try(&rest, parse_id)?;
+    let id = if let Some(id) = try_id {
+        Some(id)
+    } else {
+        None
     };
     let (_, rest) = parse_keyword(&rest, "{")?;
     let (stmt_list, rest) = parse_stmt_list(&rest)?;
