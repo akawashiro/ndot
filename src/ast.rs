@@ -732,7 +732,7 @@ struct AList {
     a_list: Option<Box<AList>>,
 }
 
-fn skip<T>(
+fn parse_skip<T>(
     tokens: &Vec<String>,
     parse_fn: fn(&Vec<String>) -> Result<(T, Vec<String>), String>,
 ) -> Vec<String> {
@@ -751,7 +751,7 @@ fn parse_a_list(tokens: &Vec<String>) -> Result<(AList, Vec<String>), String> {
     let parse_semicolon_or_camma = |tokens: &Vec<String>| -> Result<(String, Vec<String>), String> {
         parse_keyword_list_or(tokens, &[";", ","].to_vec())
     };
-    let rest = skip(&rest, parse_semicolon_or_camma);
+    let rest = parse_skip(&rest, parse_semicolon_or_camma);
     let try_a_list = parse_a_list(&rest);
     match try_a_list {
         Ok((a_list, rest)) => {
