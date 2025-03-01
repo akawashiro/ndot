@@ -1309,3 +1309,103 @@ fn test_parse_attr_stmt() {
     assert_eq!(attr_stmt.attr_list.attr_list, None);
     assert_eq!(rest, vec![] as Vec<String>);
 }
+
+#[derive(Debug, PartialEq)]
+enum CompassPoint {
+    N,
+    NE,
+    E,
+    SE,
+    S,
+    SW,
+    W,
+    NW,
+    C,
+    UNDERSORE,
+}
+
+fn parse_compass_point(tokens: &Vec<String>) -> Result<(CompassPoint, Vec<String>), String> {
+    let (_, rest) = parse_keyword(&tokens, ":")?;
+    let (keyword, rest) = parse_keyword_list_or(
+        &rest,
+        &["n", "ne", "e", "se", "s", "sw", "w", "nw", "c", "_"].to_vec(),
+    )?;
+    let compass_point = match keyword.as_str() {
+        "n" => CompassPoint::N,
+        "ne" => CompassPoint::NE,
+        "e" => CompassPoint::E,
+        "se" => CompassPoint::SE,
+        "s" => CompassPoint::S,
+        "sw" => CompassPoint::SW,
+        "w" => CompassPoint::W,
+        "nw" => CompassPoint::NW,
+        "c" => CompassPoint::C,
+        "_" => CompassPoint::UNDERSORE,
+        _ => panic!("unexpected compass point"),
+    };
+    Ok((compass_point, rest))
+}
+
+#[test]
+fn test_parse_compass_point() {
+    let tokens = tokenize(":n".to_string());
+    let (compass_point, rest) = parse_compass_point(&tokens).unwrap();
+    assert_eq!(compass_point, CompassPoint::N);
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
+#[derive(Debug, PartialEq)]
+enum Port {
+    IDPort((ID, Option<CompassPoint>)),
+    CompassPointPort(CompassPoint),
+}
+
+fn parse_port(tokens: &Vec<String>) -> Result<(Port, Vec<String>), String> {
+    let try_compass_point = parse_try(tokens, parse_compass_point);
+    if let Ok((Some(compass_point), rest)) = try_compass_point {
+        return Ok((Port::CompassPointPort(compass_point), rest));
+    }
+    let (_, rest) = parse_keyword(&tokens, ":")?;
+    let (id, rest) = parse_id(&rest)?;
+    let try_compass_point = parse_try(&rest, parse_compass_point);
+    if let Ok((compass_point, rest)) = try_compass_point {
+        return Ok((Port::IDPort((id, compass_point)), rest));
+    } else {
+        return Ok((Port::IDPort((id, None)), rest));
+    }
+}
+
+#[test]
+fn test_parse_port() {
+    let tokens = tokenize(":a".to_string());
+    let (port, rest) = parse_port(&tokens).unwrap();
+    match port {
+        Port::IDPort((id, compass_point)) => {
+            assert_eq!(id.name, "a");
+            assert_eq!(compass_point, None);
+        }
+        _ => panic!("expected IDPort"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(":a:n".to_string());
+    let (port, rest) = parse_port(&tokens).unwrap();
+    match port {
+        Port::IDPort((id, compass_point)) => {
+            assert_eq!(id.name, "a");
+            assert_eq!(compass_point.unwrap(), CompassPoint::N);
+        }
+        _ => panic!("expected IDPort"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+
+    let tokens = tokenize(":n".to_string());
+    let (port, rest) = parse_port(&tokens).unwrap();
+    match port {
+        Port::CompassPointPort(compass_point) => {
+            assert_eq!(compass_point, CompassPoint::N);
+        }
+        _ => panic!("expected CompassPointPort"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}

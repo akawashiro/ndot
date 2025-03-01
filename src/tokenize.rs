@@ -9,7 +9,7 @@ fn raw_tokenize_dot(dot_str: String) -> Vec<String> {
     let mut last_char = ' ';
     for c in dot_str.chars() {
         match c {
-            ' ' | '\t' | '\n' | ';' | ',' | '[' | ']' | '=' | '{' | '}' => {
+            ' ' | '\t' | '\n' | ';' | ',' | '[' | ']' | '=' | '{' | '}' | ':' => {
                 if in_quote {
                     token.push(c);
                 } else {
@@ -26,6 +26,7 @@ fn raw_tokenize_dot(dot_str: String) -> Vec<String> {
                         || c == '='
                         || c == '{'
                         || c == '}'
+                        || c == ':'
                     {
                         let t = c.to_string();
                         tokens.push(t);
