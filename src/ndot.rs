@@ -37,3 +37,9 @@ fn test_showing_a_path_dot() {
     let dot = std::fs::read_to_string("showing_a_path.dot").unwrap();
     make_svg_from_dot(dot);
 }
+
+#[test]
+fn test_port_dot() {
+    let dot = std::fs::read_to_string("port.dot").unwrap();
+    make_svg_from_dot(dot);
+}
