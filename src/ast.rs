@@ -824,28 +824,14 @@ struct AttrList {
 }
 
 fn parse_attr_list(tokens: &Vec<String>) -> Result<(AttrList, Vec<String>), String> {
-    if tokens.len() == 0 {
-        return Err(format!("{}:{} No tokens", file!(), line!()));
-    }
-    if tokens[0] != "[" {
-        return Err(format!("{}:{} Expected '['", file!(), line!()));
-    }
-    let try_a_list = parse_a_list(&tokens[1..].to_vec());
-    let mut rest = tokens[1..].to_vec();
+    let mut rest = parse_keyword(&tokens, "[")?;
+    let try_a_list = parse_a_list(&rest);
     let mut head_a_list = None;
     if let Ok((h, r)) = try_a_list {
         rest = r;
         head_a_list = Some(h);
     }
-    if rest[0] != "]" {
-        return Err(format!(
-            "{}:{} Expected ']' rest={:?}",
-            file!(),
-            line!(),
-            rest
-        ));
-    }
-    rest = rest[1..].to_vec();
+    let rest = parse_keyword(&rest, "]")?;
     let try_attr_list = parse_attr_list(&rest);
     match try_attr_list {
         Ok((attr_list, rest)) => {
