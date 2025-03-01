@@ -19,8 +19,9 @@ fn is_reserved_word(token: &String) -> bool {
 // Any string of alphabetic ([a-zA-Z\200-\377]) characters, underscores ('_') or digits([0-9]), not
 // beginning with a digit;
 fn is_alphanumeric_id(token: &String) -> bool {
-    token.chars().all(|c| c.is_alphanumeric() || c == '_')
-        && token.chars().next().unwrap_or(' ').is_alphabetic()
+    let all_alphanumeric = token.chars().all(|c| c.is_alphanumeric() || c == '_');
+    let start_with_digit = token.chars().next().unwrap_or(' ').is_numeric();
+    return all_alphanumeric && !start_with_digit;
 }
 
 // a numeral [-]?(.[0-9]⁺ | [0-9]⁺(.[0-9]*)? );
