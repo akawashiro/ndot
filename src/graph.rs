@@ -22,7 +22,7 @@ struct Graph {
 
 fn collect_nodes_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS) -> Vec<Node> {
     let mut nodes = vec![];
-    match &edge_rhs.edge_egdge {
+    match &edge_rhs.edge_edge {
         ast::EdgeStmtEdge::NodeID(id) => {
             nodes.push(Node { id: id.id.clone() });
         }
@@ -69,7 +69,7 @@ fn collect_nodes_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Node> {
 
 fn collect_edge_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS, left_node: &Node) -> Vec<Edge> {
     let mut edges = vec![];
-    match &edge_rhs.edge_egdge {
+    match &edge_rhs.edge_edge {
         ast::EdgeStmtEdge::NodeID(id) => {
             let is_directed = if edge_rhs.edge_op == ast::EdgeStmtOp::Directed {
                 true

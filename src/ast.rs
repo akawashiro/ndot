@@ -195,7 +195,7 @@ pub enum EdgeStmtOp {
 pub struct EdgeStmtRHS {
     pub edge_op: EdgeStmtOp,
     // Rename
-    pub edge_egdge: EdgeStmtEdge,
+    pub edge_edge: EdgeStmtEdge,
     pub edge_rhs: Option<Box<EdgeStmtRHS>>,
 }
 
@@ -274,7 +274,7 @@ fn parse_edge_stmt_rhs(tokens: &Vec<String>) -> Result<(EdgeStmtRHS, Vec<String>
         return Ok((
             EdgeStmtRHS {
                 edge_op,
-                edge_egdge: edge_edge,
+                edge_edge: edge_edge,
                 edge_rhs: Some(Box::new(edge_rhs)),
             },
             rest,
@@ -283,7 +283,7 @@ fn parse_edge_stmt_rhs(tokens: &Vec<String>) -> Result<(EdgeStmtRHS, Vec<String>
         return Ok((
             EdgeStmtRHS {
                 edge_op,
-                edge_egdge: edge_edge,
+                edge_edge: edge_edge,
                 edge_rhs: None,
             },
             rest,
@@ -295,7 +295,7 @@ fn parse_edge_stmt_rhs(tokens: &Vec<String>) -> Result<(EdgeStmtRHS, Vec<String>
 fn test_parse_edge_stmt_rhs() {
     let tokens = tokenize("-- a".to_string());
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
-    match edge_rhs.edge_egdge {
+    match edge_rhs.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
         _ => panic!("expected NodeID"),
     }
@@ -307,7 +307,7 @@ fn test_parse_edge_stmt_rhs() {
 
     let tokens = tokenize("-- a -- b".to_string());
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
-    match edge_rhs.edge_egdge {
+    match edge_rhs.edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
         _ => panic!("expected NodeID"),
     }
@@ -317,7 +317,7 @@ fn test_parse_edge_stmt_rhs() {
     }
     match edge_rhs.edge_rhs {
         Some(rhs) => {
-            match rhs.edge_egdge {
+            match rhs.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                 _ => panic!("expected NodeID"),
             }
@@ -366,7 +366,7 @@ fn test_parse_edge_stmt() {
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
-            match rhs.edge_egdge {
+            match rhs.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                 _ => panic!("expected NodeID"),
             }
@@ -388,7 +388,7 @@ fn test_parse_edge_stmt() {
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
-            match rhs.edge_egdge {
+            match rhs.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                 _ => panic!("expected NodeID"),
             }
@@ -398,7 +398,7 @@ fn test_parse_edge_stmt() {
             }
             match rhs.edge_rhs {
                 Some(rhs) => {
-                    match rhs.edge_egdge {
+                    match rhs.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "c"),
                         _ => panic!("expected NodeID"),
                     }
@@ -423,7 +423,7 @@ fn test_parse_edge_stmt() {
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
-            match rhs.edge_egdge {
+            match rhs.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                 _ => panic!("expected NodeID"),
             }
@@ -445,7 +445,7 @@ fn test_parse_edge_stmt() {
     }
     match edge_stmt.edge_rhs {
         Some(rhs) => {
-            match rhs.edge_egdge {
+            match rhs.edge_edge {
                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                 _ => panic!("expected NodeID"),
             }
@@ -537,7 +537,7 @@ fn test_parse_stmt() {
             }
             match edge_stmt.edge_rhs {
                 Some(rhs) => {
-                    match rhs.edge_egdge {
+                    match rhs.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                         _ => panic!("expected NodeID"),
                     }
@@ -630,7 +630,7 @@ fn test_parse_stmt_list() {
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
-                            match rhs.edge_egdge {
+                            match rhs.edge_edge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                                 _ => panic!("expected NodeID"),
                             }
@@ -674,7 +674,7 @@ a -- b;"#
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
-                            match rhs.edge_egdge {
+                            match rhs.edge_edge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                                 _ => panic!("expected NodeID"),
                             }
@@ -797,7 +797,7 @@ fn test_parse_graph() {
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
-                            match rhs.edge_egdge {
+                            match rhs.edge_edge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                                 _ => panic!("expected NodeID"),
                             }
@@ -852,7 +852,7 @@ fn test_parse_graph() {
                     }
                     match edge_stmt.edge_rhs {
                         Some(rhs) => {
-                            match rhs.edge_egdge {
+                            match rhs.edge_edge {
                                 EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                                 _ => panic!("expected NodeID"),
                             }
@@ -904,7 +904,7 @@ fn test_parse_graph() {
                             }
                             match edge_stmt.edge_rhs {
                                 Some(rhs) => {
-                                    match rhs.edge_egdge {
+                                    match rhs.edge_edge {
                                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                                         _ => panic!("expected NodeID"),
                                     }
@@ -946,7 +946,7 @@ graph {
             }
             match edge_stmt.edge_rhs {
                 Some(rhs) => {
-                    match rhs.edge_egdge {
+                    match rhs.edge_edge {
                         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
                         _ => panic!("expected NodeID"),
                     }
