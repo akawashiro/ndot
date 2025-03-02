@@ -1,20 +1,20 @@
 use crate::ast;
 use crate::tokenize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Node {
     // Should we use a string or a number?
     id: ast::ID,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Edge {
     is_directed: bool,
     source: Node,
     target: Node,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 struct Graph {
     nodes: Vec<Node>,
     edges: Vec<Edge>,
@@ -81,6 +81,25 @@ fn hashset_of_ids(ids: Vec<&str>) -> std::collections::HashSet<ast::ID> {
         .collect()
 }
 
+fn hashset_of_edges(edges: Vec<(&str, &str)>) -> std::collections::HashSet<Edge> {
+    edges
+        .iter()
+        .map(|(source, target)| Edge {
+            is_directed: true,
+            source: Node {
+                id: ast::ID {
+                    name: source.to_string(),
+                },
+            },
+            target: Node {
+                id: ast::ID {
+                    name: target.to_string(),
+                },
+            },
+        })
+        .collect()
+}
+
 #[test]
 fn test_construct_graph() {
     let token = tokenize::tokenize("graph { a -> b; b -> c; }".to_string());
@@ -90,4 +109,7 @@ fn test_construct_graph() {
     let nodes: std::collections::HashSet<ast::ID> =
         std::collections::HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
     assert_eq!(nodes, hashset_of_ids(vec!["a", "b", "c"]),);
+    let edges: std::collections::HashSet<Edge> =
+        std::collections::HashSet::from_iter(graph.edges.iter().map(|e| e.clone()));
+    assert_eq!(edges, hashset_of_edges(vec![("a", "b"), ("b", "c")]));
 }
