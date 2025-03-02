@@ -606,10 +606,6 @@ fn parse_stmt(tokens: &Vec<String>) -> Result<(Stmt, Vec<String>), String> {
     if let Ok((attr_stmt, rest)) = try_attr_stmt {
         return Ok((Stmt::AttrStmt(attr_stmt), rest));
     }
-    let try_subgraph = parse_subgraph(tokens);
-    if let Ok((subgraph, rest)) = try_subgraph {
-        return Ok((Stmt::Subgraph(Box::new(subgraph)), rest));
-    }
     let try_id_eq_stmt = parse_id_eq_stmt(tokens);
     if let Ok((id_eq_stmt, rest)) = try_id_eq_stmt {
         return Ok((Stmt::IDEqStmt(id_eq_stmt), rest));
@@ -622,6 +618,10 @@ fn parse_stmt(tokens: &Vec<String>) -> Result<(Stmt, Vec<String>), String> {
     let try_node_stmt = parse_node_stmt(tokens);
     if let Ok((node_stmt, rest)) = try_node_stmt {
         return Ok((Stmt::NodeStmt(node_stmt), rest));
+    }
+    let try_subgraph = parse_subgraph(tokens);
+    if let Ok((subgraph, rest)) = try_subgraph {
+        return Ok((Stmt::Subgraph(Box::new(subgraph)), rest));
     }
 
     Err(format!(
