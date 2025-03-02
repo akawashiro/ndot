@@ -5,9 +5,9 @@ use std::env;
 use std::io::Write;
 
 mod ast;
+mod graph;
 mod ndot;
 mod tokenize;
-mod graph;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

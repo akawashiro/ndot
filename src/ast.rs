@@ -158,9 +158,9 @@ fn test_parse_id_eq_stmt() {
 }
 
 #[derive(Debug, PartialEq)]
-struct NodeID {
-    id: ID,
-    port: Option<Port>,
+pub struct NodeID {
+    pub id: ID,
+    pub port: Option<Port>,
 }
 
 fn parse_node_id(tokens: &Vec<String>) -> Result<(NodeID, Vec<String>), String> {
@@ -180,7 +180,7 @@ fn parse_node_id(tokens: &Vec<String>) -> Result<(NodeID, Vec<String>), String> 
 }
 
 #[derive(Debug, PartialEq)]
-enum EdgeStmtEdge {
+pub enum EdgeStmtEdge {
     NodeID(NodeID),
     Subgraph(Box<Subgraph>),
 }
