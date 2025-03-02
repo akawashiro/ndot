@@ -2,20 +2,20 @@ use crate::ast;
 use crate::tokenize;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-struct Node {
+pub struct Node {
     // Should we use a string or a number?
     id: ast::ID,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-struct Edge {
+pub struct Edge {
     is_directed: bool,
     source: Node,
     target: Node,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-struct Graph {
+pub struct Graph {
     nodes: Vec<Node>,
     edges: Vec<Edge>,
 }
@@ -117,7 +117,7 @@ fn collect_edge_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Edge> {
     edges
 }
 
-fn construct_graph(ast: &ast::Graph) -> Result<Graph, String> {
+pub fn construct_graph(ast: &ast::Graph) -> Result<Graph, String> {
     let nodes = collect_nodes_from_stmtlist(&ast.stmt_list);
     let edges = collect_edge_from_stmtlist(&ast.stmt_list);
     Ok(Graph { nodes, edges })
