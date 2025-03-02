@@ -186,7 +186,7 @@ pub enum EdgeStmtEdge {
 }
 
 #[derive(Debug, PartialEq)]
-enum EdgeStmtOp {
+pub enum EdgeStmtOp {
     Directed,
     Undirected,
 }
@@ -194,6 +194,7 @@ enum EdgeStmtOp {
 #[derive(Debug, PartialEq)]
 pub struct EdgeStmtRHS {
     pub edge_op: EdgeStmtOp,
+    // Rename
     pub edge_egdge: EdgeStmtEdge,
     pub edge_rhs: Option<Box<EdgeStmtRHS>>,
 }
@@ -1183,9 +1184,9 @@ fn test_parse_attr_list() {
 }
 
 #[derive(Debug, PartialEq)]
-struct Subgraph {
-    id: Option<ID>,
-    stmt_list: StmtList,
+pub struct Subgraph {
+    pub id: Option<ID>,
+    pub stmt_list: StmtList,
 }
 
 fn parse_subgraph(tokens: &Vec<String>) -> Result<(Subgraph, Vec<String>), String> {
