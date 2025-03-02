@@ -7,6 +7,7 @@ use std::io::Write;
 mod ast;
 mod ndot;
 mod tokenize;
+mod graph;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
