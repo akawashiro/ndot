@@ -5,7 +5,9 @@ pub struct ID {
     pub name: String,
 }
 
-const RESERVED_WORDS: [&str; 6] = ["node", "edge", "graph", "digraph", "subgraph", "strict"];
+const RESERVED_WORDS: [&str; 11] = [
+    "node", "edge", "graph", "digraph", "subgraph", "strict", "{", "}", ";", "--", "->",
+];
 
 fn is_reserved_word(token: &String) -> bool {
     for reserved_word in RESERVED_WORDS.iter() {
@@ -404,12 +406,8 @@ fn test_parse_edge_stmt_rhs() {
 
 fn parse_edge_stmt(tokens: &Vec<String>) -> Result<(EdgeStmt, Vec<String>), String> {
     let (edge_edge, rest) = parse_edge_stmt_edge(tokens)?;
-    let try_rhs = parse_edge_stmt_rhs(&rest);
-    let (edge_rhs, rest) = if let Ok((edge_rhs, rest)) = try_rhs {
-        (Some(Box::new(edge_rhs)), rest)
-    } else {
-        (None, rest)
-    };
+    let (edge_rhs, rest) = parse_edge_stmt_rhs(&rest)?;
+    let edge_rhs = Some(Box::new(edge_rhs));
     let try_attr_list = parse_attr_list(&rest);
     let (attr_list, rest) = if let Ok((attr_list, rest)) = try_attr_list {
         (Some(attr_list), rest)
@@ -432,19 +430,29 @@ fn test_parse_edge_stmt_ab_c() {
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
     match edge_stmt.edge_edge {
         EdgeStmtEdge::Subgraph(subgraph) => {
-            assert_eq!(subgraph.id.unwrap().name, "a");
             assert_eq!(
                 subgraph.stmt_list.stmt,
-                Stmt::IDEqStmt(IDEqStmt {
-                    id_left: ID {
-                        name: "b".to_string()
+                Stmt::NodeStmt(NodeStmt {
+                    id: ID {
+                        name: "a".to_string()
                     },
-                    id_right: ID {
-                        name: "c".to_string()
-                    },
+                    attr_list: None
                 })
             );
-            assert_eq!(subgraph.stmt_list.stmt_list, None);
+            let right_stmt_list = subgraph.stmt_list.stmt_list;
+            match right_stmt_list {
+                Some(stmt_list) => {
+                    match stmt_list.stmt {
+                        Stmt::NodeStmt(node_stmt) => {
+                            assert_eq!(node_stmt.id.name, "b");
+                            assert_eq!(node_stmt.attr_list, None);
+                        }
+                        _ => panic!("expected NodeStmt"),
+                    }
+                    assert_eq!(stmt_list.stmt_list, None);
+                }
+                None => panic!("expected stmt_list"),
+            }
         }
         _ => panic!("expected Subgraph"),
     }
