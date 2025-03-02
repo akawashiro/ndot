@@ -985,6 +985,59 @@ graph {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
+#[test]
+fn test_parse_graph_ab_c() {
+    let tokens = tokenize(r#"digraph { { a b } -> c }"#.to_string());
+    let (graph, rest) = parse_graph(&tokens).unwrap();
+    assert_eq!(graph.strict, false);
+    assert_eq!(graph.is_digraph, true);
+    match graph.stmt_list.stmt {
+        Stmt::EdgeStmt(edge_stmt) => {
+            match edge_stmt.edge_edge {
+                EdgeStmtEdge::Subgraph(subgraph) => {
+                    match subgraph.stmt_list.stmt {
+                        Stmt::NodeStmt(node_stmt) => {
+                            assert_eq!(node_stmt.id.name, "a");
+                            assert_eq!(node_stmt.attr_list, None);
+                        },
+                        _ => panic!("expected NodeStmt"),
+                    }
+                    match subgraph.stmt_list.stmt_list {
+                        Some(stmt_list) => {
+                            match stmt_list.stmt {
+                                Stmt::NodeStmt(node_stmt) => {
+                                    assert_eq!(node_stmt.id.name, "b");
+                                    assert_eq!(node_stmt.attr_list, None);
+                                },
+                                _ => panic!("expected NodeStmt"),
+                            }
+                            assert_eq!(stmt_list.stmt_list, None);
+                        }
+                        None => panic!("expected stmt_list"),
+                    }
+                }
+                _ => panic!("expected Subgraph"),
+            }
+            match edge_stmt.edge_rhs {
+                Some(rhs) => {
+                    match rhs.edge_edge {
+                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "c"),
+                        _ => panic!("expected NodeID"),
+                    }
+                    match rhs.edge_op {
+                        EdgeStmtOp::Directed => {}
+                        _ => panic!("expected directed"),
+                    }
+                    assert_eq!(rhs.edge_rhs, None);
+                }
+                None => panic!("expected edge_rhs"),
+            }
+        }
+        _ => panic!("expected EdgeStmt"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
 #[derive(Debug, PartialEq)]
 struct AList {
     id_left: ID,

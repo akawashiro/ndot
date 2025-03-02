@@ -203,7 +203,7 @@ fn test_construct_graph_abc() {
 
 #[test]
 fn test_construct_graph_a_bc_with_subgraph() {
-    let token = tokenize::tokenize("graph { a -> { b c } }".to_string());
+    let token = tokenize::tokenize("digraph { a -> { b c } }".to_string());
     let (ast, rest) = ast::parse_graph(&token).unwrap();
     assert_eq!(rest, vec![] as Vec<String>);
     let graph = construct_graph(&ast).unwrap();
@@ -217,7 +217,7 @@ fn test_construct_graph_a_bc_with_subgraph() {
 
 #[test]
 fn test_construct_graph_ab_c_with_subgraph() {
-    let token = tokenize::tokenize("graph { { a b } -> c }".to_string());
+    let token = tokenize::tokenize("digraph { { a b } -> c }".to_string());
     let (ast, rest) = ast::parse_graph(&token).unwrap();
     assert_eq!(rest, vec![] as Vec<String>);
     let graph = construct_graph(&ast).unwrap();
