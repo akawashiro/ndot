@@ -20,14 +20,19 @@ pub struct Graph {
     edges: Vec<Edge>,
 }
 
-fn collect_nodes_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS) -> Vec<Node> {
-    let mut nodes = vec![];
-    match &edge_rhs.edge_edge {
+fn collect_node_from_edge_stmt_edge(edge_edge: &ast::EdgeStmtEdge) -> Vec<Node> {
+    match edge_edge {
         ast::EdgeStmtEdge::NodeID(id) => {
-            nodes.push(Node { id: id.id.clone() });
+            vec![Node { id: id.id.clone() }]
         }
-        _ => {}
+        ast::EdgeStmtEdge::Subgraph(subgraph) => {
+            collect_node_from_subgraph(subgraph)
+        }
     }
+}
+
+fn collect_nodes_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS) -> Vec<Node> {
+    let mut nodes = collect_node_from_edge_stmt_edge(&edge_rhs.edge_edge);
     if let Some(tail) = edge_rhs.edge_rhs.as_ref() {
         nodes.extend(collect_nodes_from_edge_stmt_rhs(&tail));
     }
@@ -35,13 +40,7 @@ fn collect_nodes_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS) -> Vec<Node> {
 }
 
 fn collect_nodes_from_edgestmt(edge: &ast::EdgeStmt) -> Vec<Node> {
-    let mut nodes = vec![];
-    match &edge.edge_edge {
-        ast::EdgeStmtEdge::NodeID(id) => {
-            nodes.push(Node { id: id.id.clone() });
-        }
-        _ => {}
-    }
+    let mut nodes = collect_node_from_edge_stmt_edge(&edge.edge_edge);
     if let Some(tail) = edge.edge_rhs.as_ref() {
         nodes.extend(collect_nodes_from_edge_stmt_rhs(&tail));
     }
@@ -67,30 +66,51 @@ fn collect_nodes_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Node> {
     nodes
 }
 
-fn collect_edge_from_edge_stmt_rhs(edge_rhs: &ast::EdgeStmtRHS, left_node: &Node) -> Vec<Edge> {
+fn collect_edge_from_edge_stmt_rhs(
+    edge_rhs: &ast::EdgeStmtRHS,
+    left_nodes: &Vec<Node>,
+) -> Vec<Edge> {
+    let is_directed = if edge_rhs.edge_op == ast::EdgeStmtOp::Directed {
+        true
+    } else {
+        false
+    };
     let mut edges = vec![];
+    let mut right_nodes = vec![];
+
     match &edge_rhs.edge_edge {
         ast::EdgeStmtEdge::NodeID(id) => {
-            let is_directed = if edge_rhs.edge_op == ast::EdgeStmtOp::Directed {
-                true
-            } else {
-                false
-            };
-            edges.push(Edge {
-                is_directed: is_directed,
-                source: left_node.clone(),
-                target: Node { id: id.id.clone() },
-            });
-            if let Some(tail) = edge_rhs.edge_rhs.as_ref() {
-                let new_left_node = Node { id: id.id.clone() };
-                edges.extend(collect_edge_from_edge_stmt_rhs(&tail, &new_left_node));
+            for left_node in left_nodes {
+                edges.push(Edge {
+                    is_directed: is_directed,
+                    source: left_node.clone(),
+                    target: Node { id: id.id.clone() },
+                });
+            }
+            right_nodes = vec![Node { id: id.id.clone() }];
+        }
+        ast::EdgeStmtEdge::Subgraph(subgraph) => {
+            let right_nodes = collect_node_from_subgraph(subgraph);
+            for left_node in left_nodes {
+                for right_node in &right_nodes {
+                    edges.push(Edge {
+                        is_directed: is_directed,
+                        source: left_node.clone(),
+                        target: right_node.clone(),
+                    });
+                }
             }
         }
-        ast::EdgeStmtEdge::Subgraph(_) => {
-            todo!("Subgraph is not implemented yet");
-        }
+    }
+    if let Some(tail) = edge_rhs.edge_rhs.as_ref() {
+        edges.extend(collect_edge_from_edge_stmt_rhs(&tail, &right_nodes));
     }
     edges
+}
+
+fn collect_node_from_subgraph(subgraph: &ast::Subgraph) -> Vec<Node> {
+    // We should check all stmts in stmt_list are NodeStmt.
+    collect_nodes_from_stmtlist(&subgraph.stmt_list)
 }
 
 fn collect_edge_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Edge> {
@@ -101,12 +121,15 @@ fn collect_edge_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Edge> {
                 if let Some(ref edge_rhs) = edge_stmt.edge_rhs {
                     edges.extend(collect_edge_from_edge_stmt_rhs(
                         &edge_rhs,
-                        &Node { id: id.id.clone() },
+                        &vec![Node { id: id.id.clone() }],
                     ));
                 }
             }
             ast::EdgeStmtEdge::Subgraph(ref subgraph) => {
-                todo!("Subgraph is not implemented yet");
+                let left_nodes = collect_node_from_subgraph(subgraph);
+                if let Some(ref edge_rhs) = edge_stmt.edge_rhs {
+                    edges.extend(collect_edge_from_edge_stmt_rhs(&edge_rhs, &left_nodes));
+                }
             }
         },
         _ => {}
