@@ -177,3 +177,31 @@ fn test_construct_graph_abc() {
         std::collections::HashSet::from_iter(graph.edges.iter().map(|e| e.clone()));
     assert_eq!(edges, hashset_of_edges(vec![("a", "b"), ("b", "c")]));
 }
+
+#[test]
+fn test_construct_graph_a_bc_with_subgraph() {
+    let token = tokenize::tokenize("graph { a -> { b c } }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    assert_eq!(rest, vec![] as Vec<String>);
+    let graph = construct_graph(&ast).unwrap();
+    let nodes: std::collections::HashSet<ast::ID> =
+        std::collections::HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    assert_eq!(nodes, hashset_of_ids(vec!["a", "b", "c"]),);
+    let edges: std::collections::HashSet<Edge> =
+        std::collections::HashSet::from_iter(graph.edges.iter().map(|e| e.clone()));
+    assert_eq!(edges, hashset_of_edges(vec![("a", "b"), ("a", "c")]));
+}
+
+#[test]
+fn test_construct_graph_ab_c_with_subgraph() {
+    let token = tokenize::tokenize("graph { { a b } -> c }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    assert_eq!(rest, vec![] as Vec<String>);
+    let graph = construct_graph(&ast).unwrap();
+    let nodes: std::collections::HashSet<ast::ID> =
+        std::collections::HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    assert_eq!(nodes, hashset_of_ids(vec!["a", "b", "c"]),);
+    let edges: std::collections::HashSet<Edge> =
+        std::collections::HashSet::from_iter(graph.edges.iter().map(|e| e.clone()));
+    assert_eq!(edges, hashset_of_edges(vec![("a", "c"), ("b", "c")]));
+}
