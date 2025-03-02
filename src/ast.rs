@@ -114,7 +114,7 @@ fn test_parse_id() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct IDEqStmt {
     id_left: ID,
     id_right: ID,
@@ -157,7 +157,7 @@ fn test_parse_id_eq_stmt() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NodeID {
     pub id: ID,
     pub port: Option<Port>,
@@ -179,19 +179,19 @@ fn parse_node_id(tokens: &Vec<String>) -> Result<(NodeID, Vec<String>), String> 
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EdgeStmtEdge {
     NodeID(NodeID),
     Subgraph(Box<Subgraph>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EdgeStmtOp {
     Directed,
     Undirected,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EdgeStmtRHS {
     pub edge_op: EdgeStmtOp,
     // Rename
@@ -199,7 +199,7 @@ pub struct EdgeStmtRHS {
     pub edge_rhs: Option<Box<EdgeStmtRHS>>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct EdgeStmt {
     pub edge_edge: EdgeStmtEdge,
     pub edge_rhs: Option<Box<EdgeStmtRHS>>,
@@ -223,6 +223,76 @@ fn test_parse_edge_stmt_edge() {
     match edge_edge {
         EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
         _ => panic!("expected NodeID"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
+#[test]
+fn test_parse_edge_stmt_edge_subgraph() {
+    let tokens = tokenize("{ a b }".to_string());
+    let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
+    match edge_edge {
+        EdgeStmtEdge::Subgraph(subgraph) => {
+            assert_eq!(
+                subgraph.stmt_list.stmt,
+                Stmt::NodeStmt(NodeStmt {
+                    id: ID {
+                        name: "a".to_string()
+                    },
+                    attr_list: None
+                })
+            );
+            let right_stmt_list = subgraph.stmt_list.stmt_list;
+            match right_stmt_list {
+                Some(stmt_list) => {
+                    match stmt_list.stmt {
+                        Stmt::NodeStmt(node_stmt) => {
+                            assert_eq!(node_stmt.id.name, "b");
+                            assert_eq!(node_stmt.attr_list, None);
+                        }
+                        _ => panic!("expected NodeStmt"),
+                    }
+                    assert_eq!(stmt_list.stmt_list, None);
+                }
+                None => panic!("expected stmt_list"),
+            }
+        }
+        _ => panic!("expected Subgraph"),
+    }
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
+#[test]
+fn test_parse_edge_stmt_edge_subgraph_with_keyword() {
+    let tokens = tokenize("subgraph { a b }".to_string());
+    let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
+    match edge_edge {
+        EdgeStmtEdge::Subgraph(subgraph) => {
+            assert_eq!(
+                subgraph.stmt_list.stmt,
+                Stmt::NodeStmt(NodeStmt {
+                    id: ID {
+                        name: "a".to_string()
+                    },
+                    attr_list: None
+                })
+            );
+            let right_stmt_list = subgraph.stmt_list.stmt_list;
+            match right_stmt_list {
+                Some(stmt_list) => {
+                    match stmt_list.stmt {
+                        Stmt::NodeStmt(node_stmt) => {
+                            assert_eq!(node_stmt.id.name, "b");
+                            assert_eq!(node_stmt.attr_list, None);
+                        }
+                        _ => panic!("expected NodeStmt"),
+                    }
+                    assert_eq!(stmt_list.stmt_list, None);
+                }
+                None => panic!("expected stmt_list"),
+            }
+        }
+        _ => panic!("expected Subgraph"),
     }
     assert_eq!(rest, vec![] as Vec<String>);
 }
@@ -514,7 +584,7 @@ fn test_parse_edge_stmt() {
     assert_eq!(rest, vec![";".to_string()]);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
     NodeStmt(NodeStmt),
     EdgeStmt(EdgeStmt),
@@ -613,7 +683,7 @@ fn test_parse_stmt() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct StmtList {
     pub stmt: Stmt,
     pub stmt_list: Option<Box<StmtList>>,
@@ -1078,7 +1148,7 @@ fn test_parse_graph_ab_c() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct AList {
     id_left: ID,
     id_right: ID,
@@ -1189,7 +1259,7 @@ fn test_parse_a_list() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AttrList {
     a_list: Option<AList>,
     attr_list: Option<Box<AttrList>>,
@@ -1276,7 +1346,7 @@ fn test_parse_attr_list() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Subgraph {
     pub id: Option<ID>,
     pub stmt_list: StmtList,
@@ -1344,7 +1414,7 @@ fn test_parse_subgraph() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NodeStmt {
     pub id: ID,
     pub attr_list: Option<AttrList>,
@@ -1389,14 +1459,14 @@ fn test_parse_node_stmt() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum AttrStmtType {
     Graph,
     Node,
     Edge,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct AttrStmt {
     attr_type: AttrStmtType,
     attr_list: AttrList,
@@ -1474,7 +1544,7 @@ fn test_parse_attr_stmt() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum CompassPoint {
     N,
     NE,
@@ -1518,7 +1588,7 @@ fn test_parse_compass_point() {
     assert_eq!(rest, vec![] as Vec<String>);
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Port {
     IDPort((ID, Option<CompassPoint>)),
     CompassPointPort(CompassPoint),
