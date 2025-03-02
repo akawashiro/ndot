@@ -9,6 +9,7 @@ struct Node {
 
 #[derive(Debug, PartialEq)]
 struct Edge {
+    is_directed: bool,
     source: Node,
     target: Node,
 }
