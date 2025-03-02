@@ -1,8 +1,8 @@
 use crate::tokenize::tokenize;
 
-#[derive(Debug, PartialEq)]
-struct ID {
-    name: String,
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+pub struct ID {
+    pub name: String,
 }
 
 const RESERVED_WORDS: [&str; 6] = ["node", "edge", "graph", "digraph", "subgraph", "strict"];
@@ -192,17 +192,17 @@ enum EdgeStmtOp {
 }
 
 #[derive(Debug, PartialEq)]
-struct EdgeStmtRHS {
-    edge_op: EdgeStmtOp,
-    edge_egdge: EdgeStmtEdge,
-    edge_rhs: Option<Box<EdgeStmtRHS>>,
+pub struct EdgeStmtRHS {
+    pub edge_op: EdgeStmtOp,
+    pub edge_egdge: EdgeStmtEdge,
+    pub edge_rhs: Option<Box<EdgeStmtRHS>>,
 }
 
 #[derive(Debug, PartialEq)]
-struct EdgeStmt {
-    edge_edge: EdgeStmtEdge,
-    edge_rhs: Option<Box<EdgeStmtRHS>>,
-    attr_list: Option<AttrList>,
+pub struct EdgeStmt {
+    pub edge_edge: EdgeStmtEdge,
+    pub edge_rhs: Option<Box<EdgeStmtRHS>>,
+    pub attr_list: Option<AttrList>,
 }
 
 fn parse_edge_stmt_edge(tokens: &Vec<String>) -> Result<(EdgeStmtEdge, Vec<String>), String> {
@@ -474,7 +474,7 @@ fn test_parse_edge_stmt() {
 }
 
 #[derive(Debug, PartialEq)]
-enum Stmt {
+pub enum Stmt {
     NodeStmt(NodeStmt),
     EdgeStmt(EdgeStmt),
     AttrStmt(AttrStmt),
@@ -573,9 +573,9 @@ fn test_parse_stmt() {
 }
 
 #[derive(Debug, PartialEq)]
-struct StmtList {
-    stmt: Stmt,
-    stmt_list: Option<Box<StmtList>>,
+pub struct StmtList {
+    pub stmt: Stmt,
+    pub stmt_list: Option<Box<StmtList>>,
 }
 
 fn parse_semicolon(tokens: &Vec<String>) -> Result<(String, Vec<String>), String> {
@@ -697,10 +697,10 @@ a -- b;"#
 
 #[derive(Debug, PartialEq)]
 pub struct Graph {
-    strict: bool,
-    id: Option<ID>,
-    is_digraph: bool,
-    stmt_list: StmtList,
+    pub strict: bool,
+    pub id: Option<ID>,
+    pub is_digraph: bool,
+    pub stmt_list: StmtList,
 }
 
 fn parse_keyword(tokens: &Vec<String>, keyword: &str) -> Result<(String, Vec<String>), String> {
@@ -1096,7 +1096,7 @@ fn test_parse_a_list() {
 }
 
 #[derive(Debug, PartialEq)]
-struct AttrList {
+pub struct AttrList {
     a_list: Option<AList>,
     attr_list: Option<Box<AttrList>>,
 }
@@ -1251,9 +1251,9 @@ fn test_parse_subgraph() {
 }
 
 #[derive(Debug, PartialEq)]
-struct NodeStmt {
-    id: ID,
-    attr_list: Option<AttrList>,
+pub struct NodeStmt {
+    pub id: ID,
+    pub attr_list: Option<AttrList>,
 }
 
 fn parse_node_stmt(tokens: &Vec<String>) -> Result<(NodeStmt, Vec<String>), String> {
