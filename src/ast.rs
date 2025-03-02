@@ -357,6 +357,46 @@ fn parse_edge_stmt(tokens: &Vec<String>) -> Result<(EdgeStmt, Vec<String>), Stri
 }
 
 #[test]
+fn test_parse_edge_stmt_ab_c() {
+    let tokens = tokenize("{ a b} -> c".to_string());
+    let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
+    match edge_stmt.edge_edge {
+        EdgeStmtEdge::Subgraph(subgraph) => {
+            assert_eq!(subgraph.id.unwrap().name, "a");
+            assert_eq!(
+                subgraph.stmt_list.stmt,
+                Stmt::IDEqStmt(IDEqStmt {
+                    id_left: ID {
+                        name: "b".to_string()
+                    },
+                    id_right: ID {
+                        name: "c".to_string()
+                    },
+                })
+            );
+            assert_eq!(subgraph.stmt_list.stmt_list, None);
+        }
+        _ => panic!("expected Subgraph"),
+    }
+    match edge_stmt.edge_rhs {
+        Some(rhs) => {
+            match rhs.edge_edge {
+                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "c"),
+                _ => panic!("expected NodeID"),
+            }
+            match rhs.edge_op {
+                EdgeStmtOp::Directed => {}
+                _ => panic!("expected directed"),
+            }
+            assert_eq!(rhs.edge_rhs, None);
+        }
+        None => panic!("expected edge_rhs"),
+    }
+    assert_eq!(edge_stmt.attr_list, None);
+    assert_eq!(rest, vec![] as Vec<String>);
+}
+
+#[test]
 fn test_parse_edge_stmt() {
     let tokens = tokenize("a -- b".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
@@ -999,7 +1039,7 @@ fn test_parse_graph_ab_c() {
                         Stmt::NodeStmt(node_stmt) => {
                             assert_eq!(node_stmt.id.name, "a");
                             assert_eq!(node_stmt.attr_list, None);
-                        },
+                        }
                         _ => panic!("expected NodeStmt"),
                     }
                     match subgraph.stmt_list.stmt_list {
@@ -1008,7 +1048,7 @@ fn test_parse_graph_ab_c() {
                                 Stmt::NodeStmt(node_stmt) => {
                                     assert_eq!(node_stmt.id.name, "b");
                                     assert_eq!(node_stmt.attr_list, None);
-                                },
+                                }
                                 _ => panic!("expected NodeStmt"),
                             }
                             assert_eq!(stmt_list.stmt_list, None);

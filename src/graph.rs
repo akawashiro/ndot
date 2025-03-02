@@ -25,9 +25,7 @@ fn collect_node_from_edge_stmt_edge(edge_edge: &ast::EdgeStmtEdge) -> Vec<Node> 
         ast::EdgeStmtEdge::NodeID(id) => {
             vec![Node { id: id.id.clone() }]
         }
-        ast::EdgeStmtEdge::Subgraph(subgraph) => {
-            collect_node_from_subgraph(subgraph)
-        }
+        ast::EdgeStmtEdge::Subgraph(subgraph) => collect_node_from_subgraph(subgraph),
     }
 }
 
