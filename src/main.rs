@@ -9,7 +9,6 @@ mod graph;
 mod ndot;
 mod svg;
 mod tokenize;
-mod utils;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
