@@ -4,7 +4,6 @@ use crate::svg;
 use crate::tokenize;
 use log::info;
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 pub fn make_svg_from_dot(dot: String) -> Result<String, String> {

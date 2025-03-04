@@ -1,4 +1,4 @@
-use crate::graph::{Edge, Graph, Node};
+use crate::graph::{Graph, Node};
 
 // Constants for SVG generation
 const SVG_WIDTH: i32 = 800;

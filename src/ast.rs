@@ -107,13 +107,21 @@ fn parse_id(tokens: &Vec<String>) -> Result<(ID, Vec<String>), String> {
 fn test_parse_id() {
     let tokens = tokenize("a b".to_string());
     let (id, rest) = parse_id(&tokens).unwrap();
-    assert_eq!(id.name, "a");
-    assert_eq!(rest, vec!["b".to_string()]);
+    let expected_id = ID {
+        name: "a".to_string(),
+    };
+    let expected_rest = vec!["b".to_string()];
+    assert_eq!(id, expected_id);
+    assert_eq!(rest, expected_rest);
 
     let tokens = tokenize("cluster_0".to_string());
     let (id, rest) = parse_id(&tokens).unwrap();
-    assert_eq!(id.name, "cluster_0");
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_id = ID {
+        name: "cluster_0".to_string(),
+    };
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(id, expected_id);
+    assert_eq!(rest, expected_rest);
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -133,9 +141,17 @@ fn parse_id_eq_stmt(tokens: &Vec<String>) -> Result<(IDEqStmt, Vec<String>), Str
 fn test_parse_id_eq_stmt() {
     let tokens = tokenize("a = b".to_string());
     let (id_eq_stmt, rest) = parse_id_eq_stmt(&tokens).unwrap();
-    assert_eq!(id_eq_stmt.id_left.name, "a");
-    assert_eq!(id_eq_stmt.id_right.name, "b");
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_id_eq_stmt = IDEqStmt {
+        id_left: ID {
+            name: "a".to_string(),
+        },
+        id_right: ID {
+            name: "b".to_string(),
+        },
+    };
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(id_eq_stmt, expected_id_eq_stmt);
+    assert_eq!(rest, expected_rest);
 
     let tokens = vec![
         "a".to_string(),
@@ -144,9 +160,17 @@ fn test_parse_id_eq_stmt() {
         "c".to_string(),
     ];
     let (id_eq_stmt, rest) = parse_id_eq_stmt(&tokens).unwrap();
-    assert_eq!(id_eq_stmt.id_left.name, "a");
-    assert_eq!(id_eq_stmt.id_right.name, "b");
-    assert_eq!(rest, vec!["c".to_string()]);
+    let expected_id_eq_stmt = IDEqStmt {
+        id_left: ID {
+            name: "a".to_string(),
+        },
+        id_right: ID {
+            name: "b".to_string(),
+        },
+    };
+    let expected_rest = vec!["c".to_string()];
+    assert_eq!(id_eq_stmt, expected_id_eq_stmt);
+    assert_eq!(rest, expected_rest);
 
     let tokens = tokenize("a b".to_string());
     let result = parse_id_eq_stmt(&tokens);
@@ -154,9 +178,17 @@ fn test_parse_id_eq_stmt() {
 
     let tokens = tokenize("a=\"b\"".to_string());
     let (id_eq_stmt, rest) = parse_id_eq_stmt(&tokens).unwrap();
-    assert_eq!(id_eq_stmt.id_left.name, "a");
-    assert_eq!(id_eq_stmt.id_right.name, "\"b\"");
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_id_eq_stmt = IDEqStmt {
+        id_left: ID {
+            name: "a".to_string(),
+        },
+        id_right: ID {
+            name: "\"b\"".to_string(),
+        },
+    };
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(id_eq_stmt, expected_id_eq_stmt);
+    assert_eq!(rest, expected_rest);
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -222,81 +254,83 @@ fn parse_edge_stmt_edge(tokens: &Vec<String>) -> Result<(EdgeStmtEdge, Vec<Strin
 fn test_parse_edge_stmt_edge() {
     let tokens = vec!["a".to_string()];
     let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
-    match edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_edge_edge = EdgeStmtEdge::NodeID(NodeID {
+        id: ID {
+            name: "a".to_string(),
+        },
+        port: None,
+    });
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(edge_edge, expected_edge_edge);
+    assert_eq!(rest, expected_rest);
 }
 
 #[test]
 fn test_parse_edge_stmt_edge_subgraph() {
     let tokens = tokenize("{ a b }".to_string());
     let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
-    match edge_edge {
-        EdgeStmtEdge::Subgraph(subgraph) => {
-            assert_eq!(
-                subgraph.stmt_list.stmt,
-                Stmt::NodeStmt(NodeStmt {
+
+    // Create expected subgraph structure
+    let expected_subgraph = Subgraph {
+        id: None,
+        stmt_list: StmtList {
+            stmt: Stmt::NodeStmt(NodeStmt {
+                id: ID {
+                    name: "a".to_string(),
+                },
+                attr_list: None,
+            }),
+            stmt_list: Some(Box::new(StmtList {
+                stmt: Stmt::NodeStmt(NodeStmt {
                     id: ID {
-                        name: "a".to_string()
+                        name: "b".to_string(),
                     },
-                    attr_list: None
-                })
-            );
-            let right_stmt_list = subgraph.stmt_list.stmt_list;
-            match right_stmt_list {
-                Some(stmt_list) => {
-                    match stmt_list.stmt {
-                        Stmt::NodeStmt(node_stmt) => {
-                            assert_eq!(node_stmt.id.name, "b");
-                            assert_eq!(node_stmt.attr_list, None);
-                        }
-                        _ => panic!("expected NodeStmt"),
-                    }
-                    assert_eq!(stmt_list.stmt_list, None);
-                }
-                None => panic!("expected stmt_list"),
-            }
-        }
-        _ => panic!("expected Subgraph"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+                    attr_list: None,
+                }),
+                stmt_list: None,
+            })),
+        },
+    };
+
+    let expected_edge_edge = EdgeStmtEdge::Subgraph(Box::new(expected_subgraph));
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_edge, expected_edge_edge);
+    assert_eq!(rest, expected_rest);
 }
 
 #[test]
 fn test_parse_edge_stmt_edge_subgraph_with_keyword() {
     let tokens = tokenize("subgraph { a b }".to_string());
     let (edge_edge, rest) = parse_edge_stmt_edge(&tokens).unwrap();
-    match edge_edge {
-        EdgeStmtEdge::Subgraph(subgraph) => {
-            assert_eq!(
-                subgraph.stmt_list.stmt,
-                Stmt::NodeStmt(NodeStmt {
+
+    // Create expected subgraph structure
+    let expected_subgraph = Subgraph {
+        id: None,
+        stmt_list: StmtList {
+            stmt: Stmt::NodeStmt(NodeStmt {
+                id: ID {
+                    name: "a".to_string(),
+                },
+                attr_list: None,
+            }),
+            stmt_list: Some(Box::new(StmtList {
+                stmt: Stmt::NodeStmt(NodeStmt {
                     id: ID {
-                        name: "a".to_string()
+                        name: "b".to_string(),
                     },
-                    attr_list: None
-                })
-            );
-            let right_stmt_list = subgraph.stmt_list.stmt_list;
-            match right_stmt_list {
-                Some(stmt_list) => {
-                    match stmt_list.stmt {
-                        Stmt::NodeStmt(node_stmt) => {
-                            assert_eq!(node_stmt.id.name, "b");
-                            assert_eq!(node_stmt.attr_list, None);
-                        }
-                        _ => panic!("expected NodeStmt"),
-                    }
-                    assert_eq!(stmt_list.stmt_list, None);
-                }
-                None => panic!("expected stmt_list"),
-            }
-        }
-        _ => panic!("expected Subgraph"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+                    attr_list: None,
+                }),
+                stmt_list: None,
+            })),
+        },
+    };
+
+    let expected_edge_edge = EdgeStmtEdge::Subgraph(Box::new(expected_subgraph));
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_edge, expected_edge_edge);
+    assert_eq!(rest, expected_rest);
 }
 
 fn parse_edge_stmt_op(tokens: &Vec<String>) -> Result<(EdgeStmtOp, Vec<String>), String> {
@@ -319,19 +353,17 @@ fn parse_edge_stmt_op(tokens: &Vec<String>) -> Result<(EdgeStmtOp, Vec<String>),
 fn test_parse_edge_stmt_op() {
     let tokens = vec!["--".to_string()];
     let (edge_op, rest) = parse_edge_stmt_op(&tokens).unwrap();
-    match edge_op {
-        EdgeStmtOp::Undirected => {}
-        _ => panic!("expected undirected"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_edge_op = EdgeStmtOp::Undirected;
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(edge_op, expected_edge_op);
+    assert_eq!(rest, expected_rest);
 
     let tokens = vec!["->".to_string()];
     let (edge_op, rest) = parse_edge_stmt_op(&tokens).unwrap();
-    match edge_op {
-        EdgeStmtOp::Directed => {}
-        _ => panic!("expected directed"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+    let expected_edge_op = EdgeStmtOp::Directed;
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(edge_op, expected_edge_op);
+    assert_eq!(rest, expected_rest);
 
     let tokens = vec!["a".to_string()];
     let result = parse_edge_stmt_op(&tokens);
@@ -367,41 +399,50 @@ fn parse_edge_stmt_rhs(tokens: &Vec<String>) -> Result<(EdgeStmtRHS, Vec<String>
 fn test_parse_edge_stmt_rhs() {
     let tokens = tokenize("-- a".to_string());
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
-    match edge_rhs.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_rhs.edge_op {
-        EdgeStmtOp::Undirected => {}
-        _ => panic!("expected undirected"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_rhs, expected_edge_rhs);
+    assert_eq!(rest, expected_rest);
 
     let tokens = tokenize("-- a -- b".to_string());
     let (edge_rhs, rest) = parse_edge_stmt_rhs(&tokens).unwrap();
-    match edge_rhs.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_rhs.edge_op {
-        EdgeStmtOp::Undirected => {}
-        _ => panic!("expected undirected"),
-    }
-    match edge_rhs.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Undirected => {}
-                _ => panic!("expected undirected"),
-            }
-            assert_eq!(rhs.edge_rhs, None);
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
+
+    let expected_inner_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "b".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_inner_edge_rhs)),
+    };
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_rhs, expected_edge_rhs);
+    assert_eq!(rest, expected_rest);
 }
 
 fn parse_edge_stmt(tokens: &Vec<String>) -> Result<(EdgeStmt, Vec<String>), String> {
@@ -428,168 +469,205 @@ fn parse_edge_stmt(tokens: &Vec<String>) -> Result<(EdgeStmt, Vec<String>), Stri
 fn test_parse_edge_stmt_ab_c() {
     let tokens = tokenize("{ a b} -> c".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
-    match edge_stmt.edge_edge {
-        EdgeStmtEdge::Subgraph(subgraph) => {
-            assert_eq!(
-                subgraph.stmt_list.stmt,
-                Stmt::NodeStmt(NodeStmt {
+
+    // Create expected subgraph structure
+    let expected_subgraph = Subgraph {
+        id: None,
+        stmt_list: StmtList {
+            stmt: Stmt::NodeStmt(NodeStmt {
+                id: ID {
+                    name: "a".to_string(),
+                },
+                attr_list: None,
+            }),
+            stmt_list: Some(Box::new(StmtList {
+                stmt: Stmt::NodeStmt(NodeStmt {
                     id: ID {
-                        name: "a".to_string()
+                        name: "b".to_string(),
                     },
-                    attr_list: None
-                })
-            );
-            let right_stmt_list = subgraph.stmt_list.stmt_list;
-            match right_stmt_list {
-                Some(stmt_list) => {
-                    match stmt_list.stmt {
-                        Stmt::NodeStmt(node_stmt) => {
-                            assert_eq!(node_stmt.id.name, "b");
-                            assert_eq!(node_stmt.attr_list, None);
-                        }
-                        _ => panic!("expected NodeStmt"),
-                    }
-                    assert_eq!(stmt_list.stmt_list, None);
-                }
-                None => panic!("expected stmt_list"),
-            }
-        }
-        _ => panic!("expected Subgraph"),
-    }
-    match edge_stmt.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "c"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Directed => {}
-                _ => panic!("expected directed"),
-            }
-            assert_eq!(rhs.edge_rhs, None);
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(edge_stmt.attr_list, None);
-    assert_eq!(rest, vec![] as Vec<String>);
+                    attr_list: None,
+                }),
+                stmt_list: None,
+            })),
+        },
+    };
+
+    // Create expected edge_rhs structure
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Directed,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "c".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    // Create expected edge_stmt structure
+    let expected_edge_stmt = EdgeStmt {
+        edge_edge: EdgeStmtEdge::Subgraph(Box::new(expected_subgraph)),
+        edge_rhs: Some(Box::new(expected_edge_rhs)),
+        attr_list: None,
+    };
+
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_stmt, expected_edge_stmt);
+    assert_eq!(rest, expected_rest);
 }
 
 #[test]
 fn test_parse_edge_stmt() {
+    // Test case 1: a -- b
     let tokens = tokenize("a -- b".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
-    match edge_stmt.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_stmt.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Undirected => {}
-                _ => panic!("expected undirected"),
-            }
-            assert_eq!(rhs.edge_rhs, None);
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
 
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "b".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    let expected_edge_stmt = EdgeStmt {
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_edge_rhs)),
+        attr_list: None,
+    };
+
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_stmt, expected_edge_stmt);
+    assert_eq!(rest, expected_rest);
+
+    // Test case 2: a -- b -- c
     let tokens = tokenize("a -- b -- c".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
-    match edge_stmt.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_stmt.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Undirected => {}
-                _ => panic!("expected undirected"),
-            }
-            match rhs.edge_rhs {
-                Some(rhs) => {
-                    match rhs.edge_edge {
-                        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "c"),
-                        _ => panic!("expected NodeID"),
-                    }
-                    match rhs.edge_op {
-                        EdgeStmtOp::Undirected => {}
-                        _ => panic!("expected undirected"),
-                    }
-                    assert_eq!(rhs.edge_rhs, None);
-                }
-                None => panic!("expected edge_rhs"),
-            }
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(rest, vec![] as Vec<String>);
 
+    let expected_inner_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "c".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Undirected,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "b".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_inner_edge_rhs)),
+    };
+
+    let expected_edge_stmt = EdgeStmt {
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_edge_rhs)),
+        attr_list: None,
+    };
+
+    let expected_rest = vec![] as Vec<String>;
+
+    assert_eq!(edge_stmt, expected_edge_stmt);
+    assert_eq!(rest, expected_rest);
+
+    // Test case 3: a -> b }
     let tokens = tokenize("a -> b }".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
-    match edge_stmt.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_stmt.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Directed => {}
-                _ => panic!("expected directed"),
-            }
-            assert_eq!(rhs.edge_rhs, None);
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(rest, vec!["}".to_string()]);
 
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Directed,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "b".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    let expected_edge_stmt = EdgeStmt {
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_edge_rhs)),
+        attr_list: None,
+    };
+
+    let expected_rest = vec!["}".to_string()];
+
+    assert_eq!(edge_stmt, expected_edge_stmt);
+    assert_eq!(rest, expected_rest);
+
+    // Test case 4: a -> b[label="0.2"];
     let tokens = tokenize("a -> b[label=\"0.2\"];".to_string());
     let (edge_stmt, rest) = parse_edge_stmt(&tokens).unwrap();
-    match edge_stmt.edge_edge {
-        EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "a"),
-        _ => panic!("expected NodeID"),
-    }
-    match edge_stmt.edge_rhs {
-        Some(rhs) => {
-            match rhs.edge_edge {
-                EdgeStmtEdge::NodeID(id) => assert_eq!(id.id.name, "b"),
-                _ => panic!("expected NodeID"),
-            }
-            match rhs.edge_op {
-                EdgeStmtOp::Directed => {}
-                _ => panic!("expected directed"),
-            }
-            assert_eq!(rhs.edge_rhs, None);
-            match edge_stmt.attr_list {
-                Some(attr_list) => {
-                    match attr_list.a_list {
-                        Some(a_list) => {
-                            assert_eq!(a_list.id_left.name, "label");
-                            assert_eq!(a_list.id_right.name, "\"0.2\"");
-                            assert_eq!(a_list.a_list, None);
-                        }
-                        None => panic!("expected a_list"),
-                    }
-                    assert_eq!(attr_list.attr_list, None);
-                }
-                None => panic!("expected attr_list. rest={:?}", rest),
-            }
-        }
-        None => panic!("expected edge_rhs"),
-    }
-    assert_eq!(rest, vec![";".to_string()]);
+
+    let expected_a_list = AList {
+        id_left: ID {
+            name: "label".to_string(),
+        },
+        id_right: ID {
+            name: "\"0.2\"".to_string(),
+        },
+        a_list: None,
+    };
+
+    let expected_attr_list = AttrList {
+        a_list: Some(expected_a_list),
+        attr_list: None,
+    };
+
+    let expected_edge_rhs = EdgeStmtRHS {
+        edge_op: EdgeStmtOp::Directed,
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "b".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: None,
+    };
+
+    let expected_edge_stmt = EdgeStmt {
+        edge_edge: EdgeStmtEdge::NodeID(NodeID {
+            id: ID {
+                name: "a".to_string(),
+            },
+            port: None,
+        }),
+        edge_rhs: Some(Box::new(expected_edge_rhs)),
+        attr_list: Some(expected_attr_list),
+    };
+
+    let expected_rest = vec![";".to_string()];
+
+    assert_eq!(edge_stmt, expected_edge_stmt);
+    assert_eq!(rest, expected_rest);
 }
 
 #[derive(Debug, PartialEq, Clone)]
