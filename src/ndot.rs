@@ -1,12 +1,13 @@
 use crate::ast;
 use crate::graph;
+use crate::svg;
 use crate::tokenize;
 
 pub fn make_svg_from_dot(dot: String) -> Result<String, String> {
     let tokens = tokenize::tokenize(dot);
     let (ast, _) = ast::parse_graph(&tokens)?;
     let graph = graph::construct_graph(&ast)?;
-    return Ok("Dummy SVG".to_string());
+    return Ok(svg::graph_to_svg(&graph));
 }
 
 #[test]

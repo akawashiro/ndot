@@ -4,20 +4,20 @@ use crate::tokenize;
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Node {
     // Should we use a string or a number?
-    id: ast::ID,
+    pub id: ast::ID,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Edge {
-    is_directed: bool,
-    source: Node,
-    target: Node,
+    pub is_directed: bool,
+    pub source: Node,
+    pub target: Node,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Graph {
-    nodes: Vec<Node>,
-    edges: Vec<Edge>,
+    pub nodes: Vec<Node>,
+    pub edges: Vec<Edge>,
 }
 
 fn collect_node_from_edge_stmt_edge(edge_edge: &ast::EdgeStmtEdge) -> Vec<Node> {
