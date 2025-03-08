@@ -41,5 +41,20 @@ fn main() {
     info!("input file: {}", args.input_file);
 
     let dot = std::fs::read_to_string(&args.input_file).unwrap();
-    ndot::make_svg_from_dot(dot);
+    let svg_content = match ndot::make_svg_from_dot(dot) {
+        Ok(svg) => svg,
+        Err(e) => {
+            eprintln!("Error generating SVG: {}", e);
+            std::process::exit(1);
+        }
+    };
+    
+    // Write the SVG to the output file
+    match std::fs::write(&args.output_file, svg_content) {
+        Ok(_) => info!("SVG saved to: {}", args.output_file),
+        Err(e) => {
+            eprintln!("Error writing SVG file: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
