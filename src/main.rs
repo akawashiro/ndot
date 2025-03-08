@@ -11,6 +11,9 @@ mod ndot;
 mod svg;
 mod tokenize;
 
+#[cfg(test)]
+mod layout_test;
+
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct NDotArgs {

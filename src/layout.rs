@@ -119,6 +119,12 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> 
 
     let mut positions = HashMap::new();
 
+    // Handle empty graph case
+    if graph.nodes.is_empty() {
+        info!("calculate_sugiyama_positions: Empty graph, returning empty positions");
+        return positions;
+    }
+
     // Step 1: Assign layers to nodes
     info!("calculate_sugiyama_positions: Assigning layers to nodes");
     let layer_start = Instant::now();
@@ -128,6 +134,12 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> 
         layer_start.elapsed(),
         layers.len()
     );
+
+    // Handle case where no layers were created (should not happen with non-empty graph)
+    if layers.is_empty() {
+        info!("calculate_sugiyama_positions: No layers created, returning empty positions");
+        return positions;
+    }
 
     // Step 2: Assign x-coordinates to minimize crossings
     info!("calculate_sugiyama_positions: Minimizing crossings");
@@ -377,18 +389,22 @@ fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
                     // try to place it at the median position
                     let mut all_neighbors = incoming.clone();
                     all_neighbors.extend(outgoing.clone());
-                    all_neighbors.sort();
 
-                    let median = all_neighbors[all_neighbors.len() / 2];
-                    if median != layer_idx
-                        && (median > layer_idx && incoming.iter().all(|&l| l < median)
-                            || median < layer_idx && outgoing.iter().all(|&l| l > median))
-                    {
-                        best_layer = median;
-                        debug!(
-                            "optimize_layers: Median layer {} is better for node {}",
-                            median, node.id.name
-                        );
+                    // Make sure we have neighbors before trying to find the median
+                    if !all_neighbors.is_empty() {
+                        all_neighbors.sort();
+
+                        let median = all_neighbors[all_neighbors.len() / 2];
+                        if median != layer_idx
+                            && (median > layer_idx && incoming.iter().all(|&l| l < median)
+                                || median < layer_idx && outgoing.iter().all(|&l| l > median))
+                        {
+                            best_layer = median;
+                            debug!(
+                                "optimize_layers: Median layer {} is better for node {}",
+                                median, node.id.name
+                            );
+                        }
                     }
                 } else if !incoming.is_empty() {
                     // If node only has incoming edges, place it as low as possible
