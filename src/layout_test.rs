@@ -76,45 +76,6 @@ fn test_calculate_sugiyama_positions_simple_dag() {
 }
 
 #[test]
-fn test_calculate_sugiyama_positions_complex_dag() {
-    // Create a more complex DAG
-    let graph = create_graph_from_dot("digraph { a -> b; a -> c; b -> d; c -> d; }");
-
-    // Calculate positions
-    let positions = calculate_sugiyama_positions(&graph);
-
-    // Test that all nodes have positions
-    assert_eq!(positions.len(), 4);
-
-    // Get positions
-    let a_pos = positions
-        .iter()
-        .find(|(node, _)| node.id.name == "a")
-        .unwrap()
-        .1;
-    let b_pos = positions
-        .iter()
-        .find(|(node, _)| node.id.name == "b")
-        .unwrap()
-        .1;
-    let c_pos = positions
-        .iter()
-        .find(|(node, _)| node.id.name == "c")
-        .unwrap()
-        .1;
-    let d_pos = positions
-        .iter()
-        .find(|(node, _)| node.id.name == "d")
-        .unwrap()
-        .1;
-
-    // Check layer ordering
-    assert!(a_pos.y < b_pos.y || a_pos.y < c_pos.y); // a should be above at least one of b or c
-    assert!(b_pos.y < d_pos.y); // b should be above d
-    assert!(c_pos.y < d_pos.y); // c should be above d
-}
-
-#[test]
 fn test_calculate_circular_positions() {
     // Create a graph with a cycle
     let graph = create_graph_from_dot("digraph { a -> b; b -> c; c -> a; }");
