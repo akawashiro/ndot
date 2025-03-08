@@ -5,10 +5,26 @@ use crate::layout::{
     NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
 };
 use crate::tokenize;
+use log::info;
 use std::collections::HashMap;
+use std::sync::Once;
+
+// Initialize logger for tests
+static INIT: Once = Once::new();
+fn init_logger() {
+    INIT.call_once(|| {
+        std::env::set_var("RUST_LOG", "info");
+        env_logger::builder()
+            .is_test(true) // This ensures logs are printed even in tests
+            .format_timestamp(None)
+            .init();
+    });
+}
 
 // Helper function to create a graph from a DOT string
 fn create_graph_from_dot(dot_string: &str) -> Graph {
+    init_logger();
+    info!("Creating graph from DOT");
     let token = tokenize::tokenize(dot_string.to_string());
     let (ast, _) = ast::parse_graph(&token).unwrap();
     construct_graph(&ast).unwrap()
