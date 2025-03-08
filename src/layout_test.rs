@@ -265,7 +265,13 @@ fn test_center_layout_empty_positions() {
 
 #[test]
 fn test_calculate_sugiyama_positions_diamond() {
-    // Create a diamond-shaped DAG: a -> b -> d, a -> c -> d
+    // Create a diamond-shaped DAG:
+    //   a
+    //  / \
+    // b   c
+    //  \ /
+    //   d
+
     let graph = create_graph_from_dot("digraph { a -> b; a -> c; b -> d; c -> d; }");
 
     // Calculate positions
