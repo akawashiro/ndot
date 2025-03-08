@@ -158,8 +158,6 @@ pub fn is_dag(graph: &Graph) -> bool {
 // Function to calculate node positions using the Sugiyama algorithm for DAGs
 pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
     info!("calculate_sugiyama_positions: Starting Sugiyama layout");
-    let start_time = Instant::now();
-
     let mut positions = HashMap::new();
 
     // Handle empty graph case
@@ -216,7 +214,7 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
 }
 
 // Function to assign layers to nodes (topological sorting)
-fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
+pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     info!("assign_layers: Starting layer assignment");
     let start_time = Instant::now();
 

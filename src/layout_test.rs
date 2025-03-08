@@ -1,8 +1,8 @@
 use crate::ast;
 use crate::graph::{construct_graph, Graph, Node};
 use crate::layout::{
-    calculate_circular_positions, calculate_sugiyama_positions, center_layout, is_dag, Position,
-    NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
+    assign_layers, calculate_circular_positions, calculate_sugiyama_positions, center_layout,
+    is_dag, Position, NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
 };
 use crate::tokenize;
 use log::info;
@@ -307,4 +307,73 @@ fn test_calculate_sugiyama_positions_diamond() {
 
     // Check that b and c are horizontally separated
     assert!(b_pos.x != c_pos.x);
+}
+
+fn test_assign_layers_diamond() {
+    // Create a diamond-shaped DAG: a -> b -> d, a -> c -> d
+    let graph = create_graph_from_dot("digraph { a -> b; a -> c; b -> d; c -> d; }");
+
+    // Call assign_layers
+    let layers = assign_layers(&graph);
+
+    // Test that we have the correct number of layers
+    assert_eq!(layers.len(), 3, "Diamond graph should have 3 layers");
+
+    // Test that nodes are in the correct layers
+    // Layer 0 should contain only node 'a'
+    assert_eq!(layers[0].len(), 1, "Layer 0 should have 1 node");
+    assert_eq!(layers[0][0].id.name, "a", "Layer 0 should contain node 'a'");
+
+    // Layer 1 should contain nodes 'b' and 'c'
+    assert_eq!(layers[1].len(), 2, "Layer 1 should have 2 nodes");
+    let layer1_names: Vec<String> = layers[1].iter().map(|n| n.id.name.clone()).collect();
+    assert!(
+        layer1_names.contains(&"b".to_string()),
+        "Layer 1 should contain node 'b'"
+    );
+    assert!(
+        layer1_names.contains(&"c".to_string()),
+        "Layer 1 should contain node 'c'"
+    );
+
+    // Layer 2 should contain only node 'd'
+    assert_eq!(layers[2].len(), 1, "Layer 2 should have 1 node");
+    assert_eq!(layers[2][0].id.name, "d", "Layer 2 should contain node 'd'");
+
+    // Verify the topological ordering
+    // 'a' should be before 'b' and 'c'
+    // 'b' and 'c' should be before 'd'
+    let a_layer = layers
+        .iter()
+        .position(|layer| layer.iter().any(|n| n.id.name == "a"))
+        .unwrap();
+    let b_layer = layers
+        .iter()
+        .position(|layer| layer.iter().any(|n| n.id.name == "b"))
+        .unwrap();
+    let c_layer = layers
+        .iter()
+        .position(|layer| layer.iter().any(|n| n.id.name == "c"))
+        .unwrap();
+    let d_layer = layers
+        .iter()
+        .position(|layer| layer.iter().any(|n| n.id.name == "d"))
+        .unwrap();
+
+    assert!(
+        a_layer < b_layer,
+        "Node 'a' should be in a layer before node 'b'"
+    );
+    assert!(
+        a_layer < c_layer,
+        "Node 'a' should be in a layer before node 'c'"
+    );
+    assert!(
+        b_layer < d_layer,
+        "Node 'b' should be in a layer before node 'd'"
+    );
+    assert!(
+        c_layer < d_layer,
+        "Node 'c' should be in a layer before node 'd'"
+    );
 }
