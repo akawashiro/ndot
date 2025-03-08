@@ -1,7 +1,50 @@
 use crate::graph::{Graph, Node};
 use log::{debug, info};
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::fmt;
+use std::ops::{Add, Sub};
 use std::time::Instant;
+
+// Position struct to represent node coordinates
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Position {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Position {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
+}
+
+impl Add for Position {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+}
+
+impl Sub for Position {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+}
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
 
 // Constants for layout
 pub const SVG_WIDTH: i32 = 800;
@@ -113,7 +156,7 @@ pub fn is_dag(graph: &Graph) -> bool {
 }
 
 // Function to calculate node positions using the Sugiyama algorithm for DAGs
-pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> {
+pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
     info!("calculate_sugiyama_positions: Starting Sugiyama layout");
     let start_time = Instant::now();
 
@@ -162,7 +205,7 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> 
                 50 + (layer.iter().position(|n| n == node).unwrap_or(0) as i32) * NODE_SPACING_X
             };
 
-            positions.insert(node.clone(), (node_x, layer_y));
+            positions.insert(node.clone(), Position::new(node_x, layer_y));
         }
     }
 
@@ -603,7 +646,7 @@ fn minimize_crossings(graph: &Graph, layers: &Vec<Vec<Node>>) -> HashMap<Node, i
 }
 
 // Function to center the layout
-pub fn center_layout(positions: &mut HashMap<Node, (i32, i32)>) {
+pub fn center_layout(positions: &mut HashMap<Node, Position>) {
     info!(
         "center_layout: Starting layout centering for {} nodes",
         positions.len()
@@ -621,11 +664,11 @@ pub fn center_layout(positions: &mut HashMap<Node, (i32, i32)>) {
     let mut min_y = i32::MAX;
     let mut max_y = i32::MIN;
 
-    for &(x, y) in positions.values() {
-        min_x = min_x.min(x);
-        max_x = max_x.max(x);
-        min_y = min_y.min(y);
-        max_y = max_y.max(y);
+    for pos in positions.values() {
+        min_x = min_x.min(pos.x);
+        max_x = max_x.max(pos.x);
+        min_y = min_y.min(pos.y);
+        max_y = max_y.max(pos.y);
     }
 
     // Calculate offsets to center
@@ -640,9 +683,9 @@ pub fn center_layout(positions: &mut HashMap<Node, (i32, i32)>) {
     );
 
     // Apply offsets
-    for (_, pos) in positions.iter_mut() {
-        pos.0 += offset_x;
-        pos.1 += offset_y;
+    for pos in positions.values_mut() {
+        pos.x += offset_x;
+        pos.y += offset_y;
     }
 
     info!(
@@ -652,7 +695,7 @@ pub fn center_layout(positions: &mut HashMap<Node, (i32, i32)>) {
 }
 
 // Function to calculate node positions using circular layout (for non-DAGs)
-pub fn calculate_circular_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> {
+pub fn calculate_circular_positions(graph: &Graph) -> HashMap<Node, Position> {
     info!(
         "calculate_circular_positions: Starting circular layout for {} nodes",
         graph.nodes.len()
@@ -680,7 +723,7 @@ pub fn calculate_circular_positions(graph: &Graph) -> HashMap<Node, (i32, i32)> 
 
             debug!("calculate_circular_positions: Placing node {} at angle {:.2} rad, position ({:.2}, {:.2})", 
                   node.id.name, angle, x, y);
-            positions.insert(node.clone(), (x as i32, y as i32));
+            positions.insert(node.clone(), Position::new(x as i32, y as i32));
         }
     }
 

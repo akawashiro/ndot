@@ -1,5 +1,5 @@
 use crate::graph::Graph;
-use crate::layout;
+use crate::layout::{self, Position};
 use log::info;
 use std::time::Instant;
 
@@ -59,8 +59,10 @@ pub fn generate_svg(graph: &Graph) -> String {
         let target_pos = node_positions.get(&edge.target).unwrap();
 
         // Calculate edge path
-        let (x1, y1) = *source_pos;
-        let (x2, y2) = *target_pos;
+        let x1 = source_pos.x;
+        let y1 = source_pos.y;
+        let x2 = target_pos.x;
+        let y2 = target_pos.y;
 
         // Calculate direction vector
         let dx = x2 - x1;
@@ -93,19 +95,19 @@ pub fn generate_svg(graph: &Graph) -> String {
     }
 
     // Draw nodes
-    for (node, (x, y)) in &node_positions {
+    for (node, pos) in &node_positions {
         // Draw node circle
         svg.push_str(&format!(
             r#"  <circle cx="{}" cy="{}" r="{}" fill="white" stroke="black" stroke-width="2" />"#,
-            x,
-            y,
+            pos.x,
+            pos.y,
             layout::NODE_RADIUS
         ));
 
         // Draw node label
         svg.push_str(&format!(
             r#"  <text x="{}" y="{}" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14">{}</text>"#,
-            x, y, node.id.name
+            pos.x, pos.y, node.id.name
         ));
     }
 

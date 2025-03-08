@@ -1,8 +1,8 @@
 use crate::ast;
 use crate::graph::{construct_graph, Graph, Node};
 use crate::layout::{
-    calculate_circular_positions, calculate_sugiyama_positions, center_layout, is_dag, NODE_RADIUS,
-    SVG_HEIGHT, SVG_WIDTH,
+    calculate_circular_positions, calculate_sugiyama_positions, center_layout, is_dag, Position,
+    NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
 };
 use crate::tokenize;
 use std::collections::HashMap;
@@ -71,8 +71,8 @@ fn test_calculate_sugiyama_positions_simple_dag() {
 
     // In a Sugiyama layout for a -> b -> c, we expect a to be above b and c
     // The exact ordering of b and c might vary depending on the implementation details
-    assert!(a_pos.1 < b_pos.1);
-    assert!(a_pos.1 < c_pos.1);
+    assert!(a_pos.y < b_pos.y);
+    assert!(a_pos.y < c_pos.y);
 }
 
 #[test]
@@ -109,9 +109,9 @@ fn test_calculate_sugiyama_positions_complex_dag() {
         .1;
 
     // Check layer ordering
-    assert!(a_pos.1 < b_pos.1 || a_pos.1 < c_pos.1); // a should be above at least one of b or c
-    assert!(b_pos.1 < d_pos.1); // b should be above d
-    assert!(c_pos.1 < d_pos.1); // c should be above d
+    assert!(a_pos.y < b_pos.y || a_pos.y < c_pos.y); // a should be above at least one of b or c
+    assert!(b_pos.y < d_pos.y); // b should be above d
+    assert!(c_pos.y < d_pos.y); // c should be above d
 }
 
 #[test]
@@ -126,9 +126,9 @@ fn test_calculate_circular_positions() {
     assert_eq!(positions.len(), 3);
 
     // Test that all positions are within SVG bounds
-    for (_, (x, y)) in positions.iter() {
-        assert!(*x >= 0 && *x <= SVG_WIDTH);
-        assert!(*y >= 0 && *y <= SVG_HEIGHT);
+    for (_, pos) in positions.iter() {
+        assert!(pos.x >= 0 && pos.x <= SVG_WIDTH);
+        assert!(pos.y >= 0 && pos.y <= SVG_HEIGHT);
     }
 
     // Test that nodes are placed in a roughly circular pattern
@@ -138,9 +138,9 @@ fn test_calculate_circular_positions() {
 
     // Calculate the distance from each node to the center
     let mut distances = Vec::new();
-    for (_, (x, y)) in positions.iter() {
-        let dx = *x as f64 - center_x;
-        let dy = *y as f64 - center_y;
+    for (_, pos) in positions.iter() {
+        let dx = pos.x as f64 - center_x;
+        let dy = pos.y as f64 - center_y;
         let distance = (dx * dx + dy * dy).sqrt();
         distances.push(distance);
     }
@@ -172,9 +172,9 @@ fn test_center_layout() {
     };
 
     let mut positions = HashMap::new();
-    positions.insert(node_a, (10, 10));
-    positions.insert(node_b, (20, 20));
-    positions.insert(node_c, (30, 30));
+    positions.insert(node_a, Position::new(10, 10));
+    positions.insert(node_b, Position::new(20, 20));
+    positions.insert(node_c, Position::new(30, 30));
 
     // Center the layout
     center_layout(&mut positions);
@@ -185,11 +185,11 @@ fn test_center_layout() {
     let mut min_y = i32::MAX;
     let mut max_y = i32::MIN;
 
-    for &(x, y) in positions.values() {
-        min_x = min_x.min(x);
-        max_x = max_x.max(x);
-        min_y = min_y.min(y);
-        max_y = max_y.max(y);
+    for pos in positions.values() {
+        min_x = min_x.min(pos.x);
+        max_x = max_x.max(pos.x);
+        min_y = min_y.min(pos.y);
+        max_y = max_y.max(pos.y);
     }
 
     // Calculate the center of the layout
@@ -264,7 +264,7 @@ fn test_calculate_circular_positions_empty_graph() {
 #[test]
 fn test_center_layout_empty_positions() {
     // Create an empty positions map
-    let mut positions = HashMap::new();
+    let mut positions: HashMap<Node, Position> = HashMap::new();
 
     // Center the layout (should not panic)
     center_layout(&mut positions);
@@ -308,13 +308,13 @@ fn test_calculate_sugiyama_positions_diamond() {
 
     // Check layer ordering - in a diamond DAG:
     // a should be above b and c
-    assert!(a_pos.1 < b_pos.1);
-    assert!(a_pos.1 < c_pos.1);
+    assert!(a_pos.y < b_pos.y);
+    assert!(a_pos.y < c_pos.y);
 
     // d should be below b and c
-    assert!(b_pos.1 < d_pos.1);
-    assert!(c_pos.1 < d_pos.1);
+    assert!(b_pos.y < d_pos.y);
+    assert!(c_pos.y < d_pos.y);
 
     // Check that b and c are horizontally separated
-    assert!(b_pos.0 != c_pos.0);
+    assert!(b_pos.x != c_pos.x);
 }
