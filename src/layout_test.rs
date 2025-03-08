@@ -315,6 +315,7 @@ fn test_calculate_sugiyama_positions_diamond() {
     assert!(b_pos.x != c_pos.x);
 }
 
+#[test]
 fn test_assign_layers_diamond() {
     // Create a diamond-shaped DAG: a -> b -> d, a -> c -> d
     let graph = create_graph_from_dot("digraph { a -> b; a -> c; b -> d; c -> d; }");
