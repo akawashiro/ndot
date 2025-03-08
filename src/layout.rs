@@ -225,7 +225,7 @@ fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
 
     // Calculate in-degree for each node
     info!("assign_layers: Calculating in-degree for each node");
-    let mut in_degree: HashMap<String, usize> = HashMap::new();
+    let mut in_degree: HashMap<String, i64> = HashMap::new();
     for node in &graph.nodes {
         in_degree.insert(node.id.name.clone(), 0);
     }

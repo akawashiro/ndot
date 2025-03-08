@@ -7,6 +7,7 @@ use crate::layout::{
 use crate::tokenize;
 use log::info;
 use std::collections::HashMap;
+use std::io::Write;
 use std::sync::Once;
 
 // Initialize logger for tests
@@ -15,8 +16,20 @@ fn init_logger() {
     INIT.call_once(|| {
         std::env::set_var("RUST_LOG", "info");
         env_logger::builder()
+            .format(|buf, record| {
+                let ts = buf.timestamp();
+                writeln!(
+                    buf,
+                    "[{} {} {} {}:{}] {}",
+                    ts,
+                    record.level(),
+                    record.target(),
+                    record.file().unwrap_or("unknown"),
+                    record.line().unwrap_or(0),
+                    record.args(),
+                )
+            })
             .is_test(true) // This ensures logs are printed even in tests
-            .format_timestamp(None)
             .init();
     });
 }
