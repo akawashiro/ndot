@@ -6,6 +6,7 @@ use std::io::Write;
 
 mod ast;
 mod graph;
+mod layout;
 mod ndot;
 mod svg;
 mod tokenize;
@@ -48,7 +49,7 @@ fn main() {
             std::process::exit(1);
         }
     };
-    
+
     // Write the SVG to the output file
     match std::fs::write(&args.output_file, svg_content) {
         Ok(_) => info!("SVG saved to: {}", args.output_file),
