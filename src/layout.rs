@@ -1,3 +1,4 @@
+use crate::ast;
 use crate::graph::{Graph, Node};
 use log::{debug, info};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -73,12 +74,12 @@ pub fn is_dag(graph: &Graph) -> bool {
 
     // Create adjacency list for faster traversal
     info!("is_dag: Creating adjacency list");
-    let mut adj_list: HashMap<&Node, Vec<&Node>> = HashMap::new();
+    let mut adj_list: HashMap<&ast::ID, Vec<&ast::ID>> = HashMap::new();
     for edge in &graph.edges {
         adj_list
-            .entry(&edge.source)
+            .entry(&edge.source_id)
             .or_insert_with(Vec::new)
-            .push(&edge.target);
+            .push(&edge.target_id);
     }
     info!(
         "is_dag: Adjacency list created with {} entries",
@@ -87,40 +88,40 @@ pub fn is_dag(graph: &Graph) -> bool {
 
     // DFS function to detect cycles
     fn has_cycle(
-        node: &Node,
-        adj_list: &HashMap<&Node, Vec<&Node>>,
+        node_id: &ast::ID,
+        adj_list: &HashMap<&ast::ID, Vec<&ast::ID>>,
         visited: &mut HashSet<String>,
         path: &mut HashSet<String>,
     ) -> bool {
         // Mark current node as visited and add to recursion path
-        debug!("has_cycle: Visiting node {}", node.id.name);
-        visited.insert(node.id.name.clone());
-        path.insert(node.id.name.clone());
+        debug!("has_cycle: Visiting node {}", node_id.name);
+        visited.insert(node_id.name.clone());
+        path.insert(node_id.name.clone());
 
         // Check all adjacent nodes
-        if let Some(neighbors) = adj_list.get(node) {
+        if let Some(neighbors) = adj_list.get(node_id) {
             debug!(
                 "has_cycle: Node {} has {} neighbors",
-                node.id.name,
+                node_id.name,
                 neighbors.len()
             );
-            for &neighbor in neighbors {
+            for &neighbor_id in neighbors {
                 // If neighbor not visited, check if it leads to a cycle
-                if !visited.contains(&neighbor.id.name) {
+                if !visited.contains(&neighbor_id.name) {
                     debug!(
                         "has_cycle: Checking unvisited neighbor {}",
-                        neighbor.id.name
+                        neighbor_id.name
                     );
-                    if has_cycle(neighbor, adj_list, visited, path) {
-                        debug!("has_cycle: Found cycle through {}", neighbor.id.name);
+                    if has_cycle(neighbor_id, adj_list, visited, path) {
+                        debug!("has_cycle: Found cycle through {}", neighbor_id.name);
                         return true;
                     }
                 }
                 // If neighbor is in current recursion path, we found a cycle
-                else if path.contains(&neighbor.id.name) {
+                else if path.contains(&neighbor_id.name) {
                     debug!(
                         "has_cycle: Found cycle - {} is already in path",
-                        neighbor.id.name
+                        neighbor_id.name
                     );
                     return true;
                 }
@@ -128,8 +129,8 @@ pub fn is_dag(graph: &Graph) -> bool {
         }
 
         // Remove node from current path
-        debug!("has_cycle: Removing {} from path", node.id.name);
-        path.remove(&node.id.name);
+        debug!("has_cycle: Removing {} from path", node_id.name);
+        path.remove(&node_id.name);
         false
     }
 
@@ -138,7 +139,7 @@ pub fn is_dag(graph: &Graph) -> bool {
     for node in &graph.nodes {
         if !visited.contains(&node.id.name) {
             info!("is_dag: Checking unvisited node {}", node.id.name);
-            if has_cycle(node, &adj_list, &mut visited, &mut path) {
+            if has_cycle(&node.id, &adj_list, &mut visited, &mut path) {
                 info!(
                     "is_dag: Found cycle, not a DAG. Took {:?}",
                     start_time.elapsed()
@@ -230,7 +231,7 @@ pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
     }
 
     for edge in &graph.edges {
-        *in_degree.entry(edge.target.id.name.clone()).or_insert(0) += 1;
+        *in_degree.entry(edge.target_id.name.clone()).or_insert(0) += 1;
     }
 
     info!(
@@ -241,10 +242,15 @@ pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
     // Create adjacency list for faster access to outgoing edges
     let mut adj_list: HashMap<String, Vec<Node>> = HashMap::new();
     for edge in &graph.edges {
+        // Find the source node
+        let source_node = graph.nodes.iter().find(|n| n.id == edge.source_id).unwrap();
+        // Find the target node
+        let target_node = graph.nodes.iter().find(|n| n.id == edge.target_id).unwrap();
+        
         adj_list
-            .entry(edge.source.id.name.clone())
+            .entry(edge.source_id.name.clone())
             .or_insert_with(Vec::new)
-            .push(edge.target.clone());
+            .push(target_node.clone());
     }
 
     // Queue for current rank's nodes (nodes with no incoming edges)
@@ -372,15 +378,20 @@ fn minimize_crossings(graph: &Graph, layers: &Vec<Vec<Node>>) -> HashMap<Node, i
     let mut incoming: HashMap<String, Vec<Node>> = HashMap::new();
 
     for edge in &graph.edges {
+        // Find the source node
+        let source_node = graph.nodes.iter().find(|n| n.id == edge.source_id).unwrap();
+        // Find the target node
+        let target_node = graph.nodes.iter().find(|n| n.id == edge.target_id).unwrap();
+        
         outgoing
-            .entry(edge.source.id.name.clone())
+            .entry(edge.source_id.name.clone())
             .or_insert_with(Vec::new)
-            .push(edge.target.clone());
+            .push(target_node.clone());
 
         incoming
-            .entry(edge.target.id.name.clone())
+            .entry(edge.target_id.name.clone())
             .or_insert_with(Vec::new)
-            .push(edge.source.clone());
+            .push(source_node.clone());
     }
 
     info!(

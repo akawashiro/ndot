@@ -18,17 +18,11 @@ fn hashset_of_edges(edges: Vec<(&str, &str)>) -> HashSet<Edge> {
         .iter()
         .map(|(source, target)| Edge {
             is_directed: true,
-            source: Node {
-                id: ast::ID {
-                    name: source.to_string(),
-                },
-                label: None,
+            source_id: ast::ID {
+                name: source.to_string(),
             },
-            target: Node {
-                id: ast::ID {
-                    name: target.to_string(),
-                },
-                label: None,
+            target_id: ast::ID {
+                name: target.to_string(),
             },
         })
         .collect()
@@ -88,32 +82,20 @@ fn test_construct_graph_abc() {
         edges: vec![
             Edge {
                 is_directed: true,
-                source: Node {
-                    id: ast::ID {
-                        name: "a".to_string(),
-                    },
-                    label: None,
+                source_id: ast::ID {
+                    name: "a".to_string(),
                 },
-                target: Node {
-                    id: ast::ID {
-                        name: "b".to_string(),
-                    },
-                    label: None,
+                target_id: ast::ID {
+                    name: "b".to_string(),
                 },
             },
             Edge {
                 is_directed: true,
-                source: Node {
-                    id: ast::ID {
-                        name: "b".to_string(),
-                    },
-                    label: None,
+                source_id: ast::ID {
+                    name: "b".to_string(),
                 },
-                target: Node {
-                    id: ast::ID {
-                        name: "c".to_string(),
-                    },
-                    label: None,
+                target_id: ast::ID {
+                    name: "c".to_string(),
                 },
             },
         ],
@@ -186,32 +168,20 @@ fn test_construct_graph_ab_c_with_subgraph() {
         edges: vec![
             Edge {
                 is_directed: true,
-                source: Node {
-                    id: ast::ID {
-                        name: "a".to_string(),
-                    },
-                    label: None,
+                source_id: ast::ID {
+                    name: "a".to_string(),
                 },
-                target: Node {
-                    id: ast::ID {
-                        name: "c".to_string(),
-                    },
-                    label: None,
+                target_id: ast::ID {
+                    name: "c".to_string(),
                 },
             },
             Edge {
                 is_directed: true,
-                source: Node {
-                    id: ast::ID {
-                        name: "b".to_string(),
-                    },
-                    label: None,
+                source_id: ast::ID {
+                    name: "b".to_string(),
                 },
-                target: Node {
-                    id: ast::ID {
-                        name: "c".to_string(),
-                    },
-                    label: None,
+                target_id: ast::ID {
+                    name: "c".to_string(),
                 },
             },
         ],
@@ -275,7 +245,7 @@ fn test_construct_graph_diamond() {
     let a_outgoing_edges: Vec<&Edge> = graph
         .edges
         .iter()
-        .filter(|e| e.source.id.name == "a")
+        .filter(|e| e.source_id.name == "a")
         .collect();
     assert_eq!(
         a_outgoing_edges.len(),
@@ -285,13 +255,13 @@ fn test_construct_graph_diamond() {
     assert!(
         a_outgoing_edges
             .iter()
-            .any(|e| e.target.id.name == "b" && e.is_directed),
+            .any(|e| e.target_id.name == "b" && e.is_directed),
         "Node 'a' should have a directed edge to 'b'"
     );
     assert!(
         a_outgoing_edges
             .iter()
-            .any(|e| e.target.id.name == "c" && e.is_directed),
+            .any(|e| e.target_id.name == "c" && e.is_directed),
         "Node 'a' should have a directed edge to 'c'"
     );
 
@@ -299,7 +269,7 @@ fn test_construct_graph_diamond() {
     let b_outgoing_edges: Vec<&Edge> = graph
         .edges
         .iter()
-        .filter(|e| e.source.id.name == "b")
+        .filter(|e| e.source_id.name == "b")
         .collect();
     assert_eq!(
         b_outgoing_edges.len(),
@@ -309,14 +279,14 @@ fn test_construct_graph_diamond() {
     assert!(
         b_outgoing_edges
             .iter()
-            .any(|e| e.target.id.name == "d" && e.is_directed),
+            .any(|e| e.target_id.name == "d" && e.is_directed),
         "Node 'b' should have a directed edge to 'd'"
     );
 
     let c_outgoing_edges: Vec<&Edge> = graph
         .edges
         .iter()
-        .filter(|e| e.source.id.name == "c")
+        .filter(|e| e.source_id.name == "c")
         .collect();
     assert_eq!(
         c_outgoing_edges.len(),
@@ -326,7 +296,7 @@ fn test_construct_graph_diamond() {
     assert!(
         c_outgoing_edges
             .iter()
-            .any(|e| e.target.id.name == "d" && e.is_directed),
+            .any(|e| e.target_id.name == "d" && e.is_directed),
         "Node 'c' should have a directed edge to 'd'"
     );
 
@@ -334,7 +304,7 @@ fn test_construct_graph_diamond() {
     let d_outgoing_edges: Vec<&Edge> = graph
         .edges
         .iter()
-        .filter(|e| e.source.id.name == "d")
+        .filter(|e| e.source_id.name == "d")
         .collect();
     assert_eq!(
         d_outgoing_edges.len(),
@@ -413,14 +383,8 @@ fn test_node_with_label_and_edge() {
     // Verify the edge
     let edge = &graph.edges[0];
     assert!(edge.is_directed, "Edge should be directed");
-    assert_eq!(edge.source.id.name, "a", "Edge source should be 'a'");
-    assert_eq!(edge.target.id.name, "b", "Edge target should be 'b'");
-
-    // Verify that the edge's source node has the label
-    assert!(
-        edge.source.label.is_none(),
-        "Edge source label should be None in the edge structure"
-    );
+    assert_eq!(edge.source_id.name, "a", "Edge source should be 'a'");
+    assert_eq!(edge.target_id.name, "b", "Edge target should be 'b'");
 
     // Verify that node 'b' doesn't have a label
     let node_b = graph.nodes.iter().find(|n| n.id.name == "b").unwrap();

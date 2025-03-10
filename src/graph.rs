@@ -11,8 +11,8 @@ pub struct Node {
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Edge {
     pub is_directed: bool,
-    pub source: Node,
-    pub target: Node,
+    pub source_id: ast::ID,
+    pub target_id: ast::ID,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -113,11 +113,8 @@ fn collect_edge_from_edge_stmt_rhs(
             for left_node in left_nodes {
                 edges.push(Edge {
                     is_directed: is_directed,
-                    source: left_node.clone(),
-                    target: Node {
-                        id: id.id.clone(),
-                        label: None,
-                    },
+                    source_id: left_node.id.clone(),
+                    target_id: id.id.clone(),
                 });
             }
             right_nodes = vec![Node {
@@ -131,8 +128,8 @@ fn collect_edge_from_edge_stmt_rhs(
                 for right_node in &right_nodes {
                     edges.push(Edge {
                         is_directed: is_directed,
-                        source: left_node.clone(),
-                        target: right_node.clone(),
+                        source_id: left_node.id.clone(),
+                        target_id: right_node.id.clone(),
                     });
                 }
             }
