@@ -213,13 +213,14 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
     positions
 }
 
-// Function to perform topological sorting of nodes into layers
+// Function to perform topological sorting of nodes into ranks
+// Returns Vec<Vec<Node>> where each inner Vec<Node> contains nodes with the same rank
 pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
     info!("topological_sort: Starting topological sorting");
     let start_time = Instant::now();
 
-    let mut layers: Vec<Vec<Node>> = Vec::new();
-    let mut node_to_layer: HashMap<String, usize> = HashMap::new();
+    // Result vector where each inner vector contains nodes of the same rank
+    let mut ranks: Vec<Vec<Node>> = Vec::new();
 
     // Calculate in-degree for each node
     info!("topological_sort: Calculating in-degree for each node");
@@ -237,119 +238,88 @@ pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
         in_degree.len()
     );
 
-    // Queue for nodes with no incoming edges
-    let mut queue: VecDeque<Node> = VecDeque::new();
+    // Create adjacency list for faster access to outgoing edges
+    let mut adj_list: HashMap<String, Vec<Node>> = HashMap::new();
+    for edge in &graph.edges {
+        adj_list
+            .entry(edge.source.id.name.clone())
+            .or_insert_with(Vec::new)
+            .push(edge.target.clone());
+    }
 
-    // Add nodes with no incoming edges to the first layer
-    info!("topological_sort: Adding nodes with no incoming edges to first layer");
+    // Queue for current rank's nodes (nodes with no incoming edges)
+    let mut current_rank_nodes: Vec<Node> = Vec::new();
+
+    // Add nodes with no incoming edges to the first rank
+    info!("topological_sort: Adding nodes with no incoming edges to first rank");
     for node in &graph.nodes {
         if in_degree.get(&node.id.name).unwrap_or(&0) == &0 {
             info!(
-                "topological_sort: Node {} has no incoming edges, adding to first layer",
+                "topological_sort: Node {} has no incoming edges, adding to first rank",
                 node.id.name
             );
-            queue.push_back(node.clone());
+            current_rank_nodes.push(node.clone());
         }
     }
 
-    info!(
-        "topological_sort: {} nodes added to first layer",
-        queue.len()
-    );
-
-    // Process nodes in topological order
-    let mut current_layer = 0;
-    layers.push(Vec::new());
-
-    info!("topological_sort: Processing nodes in topological order");
-    let mut processed_count = 0;
-
-    while !queue.is_empty() {
-        let node = queue.pop_front().unwrap();
-        processed_count += 1;
-
+    // Process nodes rank by rank
+    while !current_rank_nodes.is_empty() {
         info!(
-            "topological_sort: Processing node {} in layer {}",
-            node.id.name, current_layer
+            "topological_sort: Processing rank with {} nodes",
+            current_rank_nodes.len()
         );
 
-        // Add node to current layer
-        layers[current_layer].push(node.clone());
-        node_to_layer.insert(node.id.name.clone(), current_layer);
+        // Add current rank to results
+        ranks.push(current_rank_nodes.clone());
 
-        // Find outgoing edges
-        let outgoing = graph
-            .edges
-            .iter()
-            .filter(|e| e.source.id.name == node.id.name)
-            .map(|e| e.target.clone())
-            .collect::<Vec<_>>();
+        // Collect nodes for the next rank
+        let mut next_rank_nodes: Vec<Node> = Vec::new();
 
-        info!(
-            "topological_sort: Node {} has {} outgoing edges",
-            node.id.name,
-            outgoing.len()
-        );
+        // Process all nodes in the current rank
+        for node in &current_rank_nodes {
+            // Get outgoing edges
+            if let Some(targets) = adj_list.get(&node.id.name) {
+                for target in targets {
+                    // Decrease in-degree of target
+                    let in_deg = in_degree.get_mut(&target.id.name).unwrap();
+                    *in_deg -= 1;
 
-        // Update in-degree and add to queue if in-degree becomes 0
-        for target in outgoing {
-            let in_deg = in_degree.get_mut(&target.id.name).unwrap();
-            *in_deg -= 1;
-
-            info!(
-                "topological_sort: Reduced in-degree of {} to {}",
-                target.id.name, in_deg
-            );
-
-            if *in_deg == 0 {
-                info!(
-                    "topological_sort: Adding {} to queue (in-degree is now 0)",
-                    target.id.name
-                );
-                queue.push_back(target);
-            }
-        }
-
-        // If queue is empty but we haven't processed all nodes,
-        // we might have a cycle (shouldn't happen for DAGs)
-        if queue.is_empty() && node_to_layer.len() < graph.nodes.len() {
-            info!("topological_sort: Queue empty but not all nodes processed. Starting new layer.");
-            // Start a new layer
-            current_layer += 1;
-            layers.push(Vec::new());
-
-            // Find nodes not yet assigned to a layer
-            for node in &graph.nodes {
-                if !node_to_layer.contains_key(&node.id.name) {
-                    info!(
-                        "topological_sort: Adding unprocessed node {} to queue",
-                        node.id.name
-                    );
-                    queue.push_back(node.clone());
-                    break;
+                    // If in-degree becomes 0, add to next rank
+                    if *in_deg == 0 {
+                        info!(
+                            "topological_sort: Node {} has in-degree 0, adding to next rank",
+                            target.id.name
+                        );
+                        next_rank_nodes.push(target.clone());
+                    }
                 }
             }
         }
+
+        // Sort nodes within the rank by name for consistent output
+        next_rank_nodes.sort_by(|a, b| a.id.name.cmp(&b.id.name));
+
+        // Move to next rank
+        current_rank_nodes = next_rank_nodes;
+    }
+
+    // Verify all nodes were processed (should be true for DAGs)
+    let processed_nodes: usize = ranks.iter().map(|rank| rank.len()).sum();
+    if processed_nodes < graph.nodes.len() {
+        info!(
+            "topological_sort: Warning - Not all nodes processed. Processed {}/{} nodes.",
+            processed_nodes,
+            graph.nodes.len()
+        );
     }
 
     info!(
-        "topological_sort: Processed {} nodes in {} layers",
-        processed_count,
-        layers.len()
+        "topological_sort: Topological sorting completed in {:?}, found {} ranks",
+        start_time.elapsed(),
+        ranks.len()
     );
 
-    // Remove empty layers
-    layers.retain(|layer| !layer.is_empty());
-    info!(
-        "topological_sort: After removing empty layers, {} layers remain",
-        layers.len()
-    );
-
-    info!(
-        "topological_sort: Topological sorting completed in {:?}",
-        start_time.elapsed()
-    );
-    layers
+    ranks
 }
 
 // Function to assign layers to nodes
