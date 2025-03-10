@@ -328,12 +328,12 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     let start_time = Instant::now();
 
     // Perform topological sorting to get initial layers
-    let mut layers = topological_sort(graph);
+    let layers = topological_sort(graph);
 
     // Optimize layer assignment to minimize edge lengths
     info!("assign_layers: Optimizing layer assignment");
     let optimize_start = Instant::now();
-    optimize_layers(graph, &mut layers);
+    let optimized_layers = optimize_layers(graph, &layers);
     info!(
         "assign_layers: Layer optimization completed in {:?}",
         optimize_start.elapsed()
@@ -343,17 +343,20 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
         "assign_layers: Layer assignment completed in {:?}",
         start_time.elapsed()
     );
-    layers
+    optimized_layers
 }
 
 // Function to optimize layer assignment to minimize edge lengths
-fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
+fn optimize_layers(graph: &Graph, layers: &Vec<Vec<Node>>) -> Vec<Vec<Node>> {
     info!("optimize_layers: Starting layer optimization");
     let start_time = Instant::now();
 
+    // Clone the input layers to avoid modifying the original
+    let mut optimized_layers = layers.clone();
+
     // Create a map from node name to layer index
     let mut node_to_layer: HashMap<String, usize> = HashMap::new();
-    for (i, layer) in layers.iter().enumerate() {
+    for (i, layer) in optimized_layers.iter().enumerate() {
         for node in layer {
             node_to_layer.insert(node.id.name.clone(), i);
         }
@@ -373,15 +376,15 @@ fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
         let iter_start = Instant::now();
         changed = false;
 
-        for layer_idx in 0..layers.len() {
+        for layer_idx in 0..optimized_layers.len() {
             info!(
                 "optimize_layers: Processing layer {}/{}",
                 layer_idx + 1,
-                layers.len()
+                optimized_layers.len()
             );
             let mut i = 0;
-            while i < layers[layer_idx].len() {
-                let node = &layers[layer_idx][i];
+            while i < optimized_layers[layer_idx].len() {
+                let node = &optimized_layers[layer_idx][i];
                 debug!(
                     "optimize_layers: Processing node {} in layer {}",
                     node.id.name, layer_idx
@@ -470,13 +473,13 @@ fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
                     let node_clone = node.clone();
 
                     // Ensure the target layer exists
-                    while layers.len() <= best_layer {
-                        layers.push(Vec::new());
+                    while optimized_layers.len() <= best_layer {
+                        optimized_layers.push(Vec::new());
                     }
 
                     // Move node to new layer
-                    layers[best_layer].push(node_clone.clone());
-                    layers[layer_idx].remove(i);
+                    optimized_layers[best_layer].push(node_clone.clone());
+                    optimized_layers[layer_idx].remove(i);
                     node_to_layer.insert(node_clone.id.name.clone(), best_layer);
 
                     changed = true;
@@ -494,11 +497,11 @@ fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
         );
 
         // Remove empty layers
-        let before_len = layers.len();
-        layers.retain(|layer| !layer.is_empty());
+        let before_len = optimized_layers.len();
+        optimized_layers.retain(|layer| !layer.is_empty());
         info!(
             "optimize_layers: Removed {} empty layers",
-            before_len - layers.len()
+            before_len - optimized_layers.len()
         );
 
         // Safety check to prevent infinite loops
@@ -513,6 +516,8 @@ fn optimize_layers(graph: &Graph, layers: &mut Vec<Vec<Node>>) {
         start_time.elapsed(),
         iteration
     );
+
+    optimized_layers
 }
 
 // Function to minimize edge crossings
