@@ -111,3 +111,9 @@ fn test_large_diamond_dot() {
     let result = process_dot_file("large_diamond.dot");
     assert!(result.is_ok());
 }
+
+#[test]
+fn test_label_dot() {
+    let result = process_dot_file("label.dot");
+    assert!(result.is_ok());
+}

@@ -375,3 +375,54 @@ fn test_node_with_label() {
         "Node label should be 'Foo'"
     );
 }
+
+#[test]
+fn test_node_with_label_and_edge() {
+    let dot_string = "digraph { a [label=\"Foo\"]; a -> b; }";
+    let token = tokenize::tokenize(dot_string.to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(rest, expected_rest);
+
+    // Construct the graph
+    let graph = construct_graph(&ast).unwrap();
+
+    // Verify the graph has the correct number of nodes and edges
+    assert_eq!(graph.nodes.len(), 2, "Graph should have 2 nodes");
+    assert_eq!(graph.edges.len(), 1, "Graph should have 1 edge");
+
+    // Convert to HashSet for unordered comparison
+    let nodes_set: HashSet<ast::ID> = HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    let expected_nodes_set = hashset_of_ids(vec!["a", "b"]);
+
+    // Verify nodes
+    assert_eq!(
+        nodes_set, expected_nodes_set,
+        "Graph should contain nodes 'a' and 'b'"
+    );
+
+    // Find node 'a' and verify it has the correct label
+    let node_a = graph.nodes.iter().find(|n| n.id.name == "a").unwrap();
+    assert!(node_a.label.is_some(), "Node 'a' should have a label");
+    assert_eq!(
+        node_a.label.as_ref().unwrap(),
+        "Foo",
+        "Node 'a' label should be 'Foo'"
+    );
+
+    // Verify the edge
+    let edge = &graph.edges[0];
+    assert!(edge.is_directed, "Edge should be directed");
+    assert_eq!(edge.source.id.name, "a", "Edge source should be 'a'");
+    assert_eq!(edge.target.id.name, "b", "Edge target should be 'b'");
+
+    // Verify that the edge's source node has the label
+    assert!(
+        edge.source.label.is_none(),
+        "Edge source label should be None in the edge structure"
+    );
+
+    // Verify that node 'b' doesn't have a label
+    let node_b = graph.nodes.iter().find(|n| n.id.name == "b").unwrap();
+    assert!(node_b.label.is_none(), "Node 'b' should not have a label");
+}
