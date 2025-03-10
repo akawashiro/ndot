@@ -309,18 +309,18 @@ fn test_topological_sort_diamond() {
     for edge in &graph.edges {
         let source_layer = layers
             .iter()
-            .position(|layer| layer.iter().any(|n| n.id.name == edge.source.id.name))
+            .position(|layer| layer.iter().any(|n| n.id.name == edge.source_id.name))
             .unwrap();
         let target_layer = layers
             .iter()
-            .position(|layer| layer.iter().any(|n| n.id.name == edge.target.id.name))
+            .position(|layer| layer.iter().any(|n| n.id.name == edge.target_id.name))
             .unwrap();
 
         assert!(
             source_layer < target_layer,
             "Edge source {} should be in a layer before target {}",
-            edge.source.id.name,
-            edge.target.id.name
+            edge.source_id.name,
+            edge.target_id.name
         );
     }
 }
