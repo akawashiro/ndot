@@ -1,0 +1,27 @@
+digraph large_diamond {
+    // Basic diamond structure
+    A -> B;
+    A -> C;
+    B -> D;
+    C -> D;
+    
+    // Extended diamond structure with multiple levels
+    D -> E;
+    D -> F;
+    E -> G;
+    F -> G;
+    
+    // Add more nodes to make it "large"
+    A -> H;
+    H -> I;
+    I -> J;
+    J -> G;
+    
+    B -> K;
+    K -> L;
+    L -> G;
+    
+    C -> M;
+    M -> N;
+    N -> G;
+}
