@@ -2,7 +2,7 @@ use crate::ast;
 use crate::graph::{construct_graph, Graph, Node};
 use crate::layout::{
     assign_layers, calculate_circular_positions, calculate_sugiyama_positions, center_layout,
-    is_dag, Position, NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
+    is_dag, topological_sort, Position, NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
 };
 use crate::tokenize;
 use log::info;
