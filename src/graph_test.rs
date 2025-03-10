@@ -33,6 +33,196 @@ fn hashset_of_edges(edges: Vec<(&str, &str)>) -> HashSet<Edge> {
 }
 
 #[test]
+fn test_construct_graph_ab_bc() {
+    let token = tokenize::tokenize("graph { a -> b; b -> c; }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(rest, expected_rest);
+
+    let graph = construct_graph(&ast).unwrap();
+
+    // Convert to HashSet for unordered comparison
+    let nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    let expected_nodes_set = hashset_of_ids(vec!["a", "b", "c"]);
+
+    let edges_set: HashSet<Edge> =
+        HashSet::from_iter(graph.edges.iter().cloned());
+    let expected_edges_set = hashset_of_edges(vec![("a", "b"), ("b", "c")]);
+
+    assert_eq!(nodes_set, expected_nodes_set);
+    assert_eq!(edges_set, expected_edges_set);
+}
+
+#[test]
+fn test_construct_graph_abc() {
+    let token = tokenize::tokenize("graph { a -> b -> c; }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(rest, expected_rest);
+
+    let graph = construct_graph(&ast).unwrap();
+
+    // Create expected graph structure
+    let expected_graph = Graph {
+        nodes: vec![
+            Node {
+                id: ast::ID {
+                    name: "a".to_string(),
+                },
+            },
+            Node {
+                id: ast::ID {
+                    name: "b".to_string(),
+                },
+            },
+            Node {
+                id: ast::ID {
+                    name: "c".to_string(),
+                },
+            },
+        ],
+        edges: vec![
+            Edge {
+                is_directed: true,
+                source: Node {
+                    id: ast::ID {
+                        name: "a".to_string(),
+                    },
+                },
+                target: Node {
+                    id: ast::ID {
+                        name: "b".to_string(),
+                    },
+                },
+            },
+            Edge {
+                is_directed: true,
+                source: Node {
+                    id: ast::ID {
+                        name: "b".to_string(),
+                    },
+                },
+                target: Node {
+                    id: ast::ID {
+                        name: "c".to_string(),
+                    },
+                },
+            },
+        ],
+    };
+
+    // Convert to HashSet for unordered comparison
+    let nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    let expected_nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(expected_graph.nodes.iter().map(|n| n.id.clone()));
+
+    let edges_set: HashSet<Edge> =
+        HashSet::from_iter(graph.edges.iter().cloned());
+    let expected_edges_set: HashSet<Edge> =
+        HashSet::from_iter(expected_graph.edges.iter().cloned());
+
+    assert_eq!(nodes_set, expected_nodes_set);
+    assert_eq!(edges_set, expected_edges_set);
+}
+
+#[test]
+fn test_construct_graph_a_bc_with_subgraph() {
+    let token = tokenize::tokenize("digraph { a -> { b c } }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(rest, expected_rest);
+
+    let graph = construct_graph(&ast).unwrap();
+
+    // Convert to HashSet for unordered comparison
+    let nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    let expected_nodes_set = hashset_of_ids(vec!["a", "b", "c"]);
+
+    let edges_set: HashSet<Edge> =
+        HashSet::from_iter(graph.edges.iter().cloned());
+    let expected_edges_set = hashset_of_edges(vec![("a", "b"), ("a", "c")]);
+
+    assert_eq!(nodes_set, expected_nodes_set);
+    assert_eq!(edges_set, expected_edges_set);
+}
+
+#[test]
+fn test_construct_graph_ab_c_with_subgraph() {
+    let token = tokenize::tokenize("digraph { { a b } -> c }".to_string());
+    let (ast, rest) = ast::parse_graph(&token).unwrap();
+    let expected_rest = vec![] as Vec<String>;
+    assert_eq!(rest, expected_rest);
+
+    let graph = construct_graph(&ast).unwrap();
+
+    // Create expected graph structure with complete structs
+    let expected_graph = Graph {
+        nodes: vec![
+            Node {
+                id: ast::ID {
+                    name: "a".to_string(),
+                },
+            },
+            Node {
+                id: ast::ID {
+                    name: "b".to_string(),
+                },
+            },
+            Node {
+                id: ast::ID {
+                    name: "c".to_string(),
+                },
+            },
+        ],
+        edges: vec![
+            Edge {
+                is_directed: true,
+                source: Node {
+                    id: ast::ID {
+                        name: "a".to_string(),
+                    },
+                },
+                target: Node {
+                    id: ast::ID {
+                        name: "c".to_string(),
+                    },
+                },
+            },
+            Edge {
+                is_directed: true,
+                source: Node {
+                    id: ast::ID {
+                        name: "b".to_string(),
+                    },
+                },
+                target: Node {
+                    id: ast::ID {
+                        name: "c".to_string(),
+                    },
+                },
+            },
+        ],
+    };
+
+    // Convert to HashSet for unordered comparison
+    let nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(graph.nodes.iter().map(|n| n.id.clone()));
+    let expected_nodes_set: HashSet<ast::ID> =
+        HashSet::from_iter(expected_graph.nodes.iter().map(|n| n.id.clone()));
+
+    let edges_set: HashSet<Edge> =
+        HashSet::from_iter(graph.edges.iter().cloned());
+    let expected_edges_set: HashSet<Edge> =
+        HashSet::from_iter(expected_graph.edges.iter().cloned());
+
+    assert_eq!(nodes_set, expected_nodes_set);
+    assert_eq!(edges_set, expected_edges_set);
+}
+
+#[test]
 fn test_construct_graph_diamond() {
     // Create a diamond-shaped DAG:
     //   a
