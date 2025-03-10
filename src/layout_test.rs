@@ -2,7 +2,7 @@ use crate::ast;
 use crate::graph::{construct_graph, Graph, Node};
 use crate::layout::{
     assign_layers, calculate_circular_positions, calculate_sugiyama_positions, center_layout,
-    is_dag, Position, NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
+    is_dag, topological_sort, Position, NODE_RADIUS, SVG_HEIGHT, SVG_WIDTH,
 };
 use crate::tokenize;
 use log::info;
@@ -261,6 +261,65 @@ fn test_center_layout_empty_positions() {
 
     // Test that the positions map is still empty
     assert_eq!(positions.len(), 0);
+}
+
+#[test]
+fn test_topological_sort_diamond() {
+    // Create a diamond-shaped DAG:
+    //   a
+    //  / \
+    // b   c
+    //  \ /
+    //   d
+
+    let graph = create_graph_from_dot("digraph { a -> b; a -> c; b -> d; c -> d; }");
+
+    // Perform topological sort
+    let layers = topological_sort(&graph);
+
+    // Test that we have the correct number of layers
+    assert_eq!(layers.len(), 3, "Diamond graph should have 3 layers");
+
+    // Test that nodes are in the correct layers
+    // Layer 0 should contain only node 'a'
+    assert_eq!(layers[0].len(), 1, "Layer 0 should have 1 node");
+    assert_eq!(layers[0][0].id.name, "a", "Layer 0 should contain node 'a'");
+
+    // Layer 1 should contain nodes 'b' and 'c'
+    assert_eq!(layers[1].len(), 2, "Layer 1 should have 2 nodes");
+    let layer1_names: Vec<String> = layers[1].iter().map(|n| n.id.name.clone()).collect();
+    assert!(
+        layer1_names.contains(&"b".to_string()),
+        "Layer 1 should contain node 'b'"
+    );
+    assert!(
+        layer1_names.contains(&"c".to_string()),
+        "Layer 1 should contain node 'c'"
+    );
+
+    // Layer 2 should contain only node 'd'
+    assert_eq!(layers[2].len(), 1, "Layer 2 should have 1 node");
+    assert_eq!(layers[2][0].id.name, "d", "Layer 2 should contain node 'd'");
+
+    // Verify the topological ordering property:
+    // For each edge (u,v), u should be in a layer before v
+    for edge in &graph.edges {
+        let source_layer = layers
+            .iter()
+            .position(|layer| layer.iter().any(|n| n.id.name == edge.source.id.name))
+            .unwrap();
+        let target_layer = layers
+            .iter()
+            .position(|layer| layer.iter().any(|n| n.id.name == edge.target.id.name))
+            .unwrap();
+
+        assert!(
+            source_layer < target_layer,
+            "Edge source {} should be in a layer before target {}",
+            edge.source.id.name,
+            edge.target.id.name
+        );
+    }
 }
 
 #[test]
