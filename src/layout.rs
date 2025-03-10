@@ -213,16 +213,16 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
     positions
 }
 
-// Function to assign layers to nodes (topological sorting)
-pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
-    info!("assign_layers: Starting layer assignment");
+// Function to perform topological sorting of nodes into layers
+pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
+    info!("topological_sort: Starting topological sorting");
     let start_time = Instant::now();
 
     let mut layers: Vec<Vec<Node>> = Vec::new();
     let mut node_to_layer: HashMap<String, usize> = HashMap::new();
 
     // Calculate in-degree for each node
-    info!("assign_layers: Calculating in-degree for each node");
+    info!("topological_sort: Calculating in-degree for each node");
     let mut in_degree: HashMap<String, i64> = HashMap::new();
     for node in &graph.nodes {
         in_degree.insert(node.id.name.clone(), 0);
@@ -233,7 +233,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     }
 
     info!(
-        "assign_layers: In-degree calculated for {} nodes",
+        "topological_sort: In-degree calculated for {} nodes",
         in_degree.len()
     );
 
@@ -241,24 +241,27 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     let mut queue: VecDeque<Node> = VecDeque::new();
 
     // Add nodes with no incoming edges to the first layer
-    info!("assign_layers: Adding nodes with no incoming edges to first layer");
+    info!("topological_sort: Adding nodes with no incoming edges to first layer");
     for node in &graph.nodes {
         if in_degree.get(&node.id.name).unwrap_or(&0) == &0 {
             info!(
-                "assign_layers: Node {} has no incoming edges, adding to first layer",
+                "topological_sort: Node {} has no incoming edges, adding to first layer",
                 node.id.name
             );
             queue.push_back(node.clone());
         }
     }
 
-    info!("assign_layers: {} nodes added to first layer", queue.len());
+    info!(
+        "topological_sort: {} nodes added to first layer",
+        queue.len()
+    );
 
     // Process nodes in topological order
     let mut current_layer = 0;
     layers.push(Vec::new());
 
-    info!("assign_layers: Processing nodes in topological order");
+    info!("topological_sort: Processing nodes in topological order");
     let mut processed_count = 0;
 
     while !queue.is_empty() {
@@ -266,7 +269,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
         processed_count += 1;
 
         info!(
-            "assign_layers: Processing node {} in layer {}",
+            "topological_sort: Processing node {} in layer {}",
             node.id.name, current_layer
         );
 
@@ -283,7 +286,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
             .collect::<Vec<_>>();
 
         info!(
-            "assign_layers: Node {} has {} outgoing edges",
+            "topological_sort: Node {} has {} outgoing edges",
             node.id.name,
             outgoing.len()
         );
@@ -294,13 +297,13 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
             *in_deg -= 1;
 
             info!(
-                "assign_layers: Reduced in-degree of {} to {}",
+                "topological_sort: Reduced in-degree of {} to {}",
                 target.id.name, in_deg
             );
 
             if *in_deg == 0 {
                 info!(
-                    "assign_layers: Adding {} to queue (in-degree is now 0)",
+                    "topological_sort: Adding {} to queue (in-degree is now 0)",
                     target.id.name
                 );
                 queue.push_back(target);
@@ -310,7 +313,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
         // If queue is empty but we haven't processed all nodes,
         // we might have a cycle (shouldn't happen for DAGs)
         if queue.is_empty() && node_to_layer.len() < graph.nodes.len() {
-            info!("assign_layers: Queue empty but not all nodes processed. Starting new layer.");
+            info!("topological_sort: Queue empty but not all nodes processed. Starting new layer.");
             // Start a new layer
             current_layer += 1;
             layers.push(Vec::new());
@@ -319,7 +322,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
             for node in &graph.nodes {
                 if !node_to_layer.contains_key(&node.id.name) {
                     info!(
-                        "assign_layers: Adding unprocessed node {} to queue",
+                        "topological_sort: Adding unprocessed node {} to queue",
                         node.id.name
                     );
                     queue.push_back(node.clone());
@@ -330,7 +333,7 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     }
 
     info!(
-        "assign_layers: Processed {} nodes in {} layers",
+        "topological_sort: Processed {} nodes in {} layers",
         processed_count,
         layers.len()
     );
@@ -338,9 +341,24 @@ pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     // Remove empty layers
     layers.retain(|layer| !layer.is_empty());
     info!(
-        "assign_layers: After removing empty layers, {} layers remain",
+        "topological_sort: After removing empty layers, {} layers remain",
         layers.len()
     );
+
+    info!(
+        "topological_sort: Topological sorting completed in {:?}",
+        start_time.elapsed()
+    );
+    layers
+}
+
+// Function to assign layers to nodes
+pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
+    info!("assign_layers: Starting layer assignment");
+    let start_time = Instant::now();
+
+    // Perform topological sorting to get initial layers
+    let mut layers = topological_sort(graph);
 
     // Optimize layer assignment to minimize edge lengths
     info!("assign_layers: Optimizing layer assignment");
