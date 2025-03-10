@@ -11,6 +11,7 @@ mod ndot;
 mod svg;
 mod tokenize;
 
+mod graph_test;
 #[cfg(test)]
 mod layout_test;
 
