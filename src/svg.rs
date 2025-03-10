@@ -104,10 +104,14 @@ pub fn generate_svg(graph: &Graph) -> String {
             layout::NODE_RADIUS
         ));
 
-        // Draw node label
+        // Draw node label (use label if available, otherwise use ID)
+        let display_text = match &node.label {
+            Some(label) => label,
+            None => &node.id.name,
+        };
         svg.push_str(&format!(
             r#"  <text x="{}" y="{}" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14">{}</text>"#,
-            pos.x, pos.y, node.id.name
+            pos.x, pos.y, display_text
         ));
     }
 
