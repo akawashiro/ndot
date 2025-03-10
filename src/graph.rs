@@ -47,20 +47,34 @@ fn collect_nodes_from_edgestmt(edge: &ast::EdgeStmt) -> Vec<Node> {
 
 fn collect_nodes_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Node> {
     let mut nodes = vec![];
+    let mut added: std::collections::HashSet<ast::ID> = std::collections::HashSet::new();
     match &stmt_list.stmt {
         ast::Stmt::NodeStmt(node_stmt) => {
-            nodes.push(Node {
-                id: node_stmt.id.clone(),
-            });
+            if added.insert(node_stmt.id.clone()) {
+                nodes.push(Node {
+                    id: node_stmt.id.clone(),
+                });
+            }
         }
         ast::Stmt::EdgeStmt(edge_stmt) => {
-            nodes.extend(collect_nodes_from_edgestmt(&edge_stmt));
+            let nodes_from_edge = collect_nodes_from_edgestmt(&edge_stmt);
+            for node in nodes_from_edge {
+                if added.insert(node.id.clone()) {
+                    nodes.push(node);
+                }
+            }
         }
         _ => {}
     }
     if let Some(tail) = stmt_list.stmt_list.as_ref() {
-        nodes.extend(collect_nodes_from_stmtlist(&tail));
+        let nodes_from_tail = collect_nodes_from_stmtlist(&tail);
+        for node in nodes_from_tail {
+            if added.insert(node.id.clone()) {
+                nodes.push(node);
+            }
+        }
     }
+
     nodes
 }
 

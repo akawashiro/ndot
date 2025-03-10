@@ -1,21 +1,45 @@
-use crate::graph::{Graph, Node};
+use crate::graph::Graph;
+use crate::layout::{self, Position};
+use log::info;
+use std::time::Instant;
 
 // Constants for SVG generation
-const SVG_WIDTH: i32 = 800;
-const SVG_HEIGHT: i32 = 600;
-const NODE_RADIUS: i32 = 20;
-const NODE_SPACING: i32 = 100;
 const ARROW_SIZE: i32 = 10;
 
-// Function to generate SVG from a Graph
+// Function to generate SVG from a Graph with calculated node positions
 pub fn generate_svg(graph: &Graph) -> String {
-    // Calculate node positions
-    let node_positions = calculate_node_positions(graph);
+    info!(
+        "generate_svg: Starting SVG generation for graph with {} nodes and {} edges",
+        graph.nodes.len(),
+        graph.edges.len()
+    );
+    let start_time = Instant::now();
+
+    // Calculate node positions based on graph type
+    info!("generate_svg: Checking if graph is a DAG");
+    let is_dag_result = layout::is_dag(graph);
+    info!("generate_svg: is_dag result: {}", is_dag_result);
+
+    let node_positions = if is_dag_result {
+        // Use Sugiyama algorithm for DAGs
+        info!("generate_svg: Using Sugiyama algorithm for DAG");
+        layout::calculate_sugiyama_positions(graph)
+    } else {
+        // Use circular layout for non-DAGs
+        info!("generate_svg: Using circular layout for non-DAG");
+        layout::calculate_circular_positions(graph)
+    };
+
+    info!(
+        "generate_svg: Node positions calculated in {:?}",
+        start_time.elapsed()
+    );
 
     // Start SVG document
     let mut svg = format!(
         r#"<svg width="{}" height="{}" xmlns="http://www.w3.org/2000/svg">"#,
-        SVG_WIDTH, SVG_HEIGHT
+        layout::SVG_WIDTH,
+        layout::SVG_HEIGHT
     );
 
     // Add SVG definitions for arrowhead marker
@@ -35,8 +59,10 @@ pub fn generate_svg(graph: &Graph) -> String {
         let target_pos = node_positions.get(&edge.target).unwrap();
 
         // Calculate edge path
-        let (x1, y1) = *source_pos;
-        let (x2, y2) = *target_pos;
+        let x1 = source_pos.x;
+        let y1 = source_pos.y;
+        let x2 = target_pos.x;
+        let y2 = target_pos.y;
 
         // Calculate direction vector
         let dx = x2 - x1;
@@ -48,11 +74,11 @@ pub fn generate_svg(graph: &Graph) -> String {
         let ny = dy as f64 / length;
 
         // Adjust start and end points to be on the node boundaries
-        let start_x = x1 as f64 + nx * NODE_RADIUS as f64;
-        let start_y = y1 as f64 + ny * NODE_RADIUS as f64;
+        let start_x = x1 as f64 + nx * layout::NODE_RADIUS as f64;
+        let start_y = y1 as f64 + ny * layout::NODE_RADIUS as f64;
 
-        let end_x = x2 as f64 - nx * NODE_RADIUS as f64;
-        let end_y = y2 as f64 - ny * NODE_RADIUS as f64;
+        let end_x = x2 as f64 - nx * layout::NODE_RADIUS as f64;
+        let end_y = y2 as f64 - ny * layout::NODE_RADIUS as f64;
 
         // Draw the edge
         if edge.is_directed {
@@ -69,17 +95,19 @@ pub fn generate_svg(graph: &Graph) -> String {
     }
 
     // Draw nodes
-    for (node, (x, y)) in &node_positions {
+    for (node, pos) in &node_positions {
         // Draw node circle
         svg.push_str(&format!(
             r#"  <circle cx="{}" cy="{}" r="{}" fill="white" stroke="black" stroke-width="2" />"#,
-            x, y, NODE_RADIUS
+            pos.x,
+            pos.y,
+            layout::NODE_RADIUS
         ));
 
         // Draw node label
         svg.push_str(&format!(
             r#"  <text x="{}" y="{}" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="14">{}</text>"#,
-            x, y, node.id.name
+            pos.x, pos.y, node.id.name
         ));
     }
 
@@ -89,30 +117,22 @@ pub fn generate_svg(graph: &Graph) -> String {
     svg
 }
 
-// Function to calculate node positions
-fn calculate_node_positions(graph: &Graph) -> std::collections::HashMap<Node, (i32, i32)> {
-    let mut positions = std::collections::HashMap::new();
-    let node_count = graph.nodes.len();
-
-    // Simple layout algorithm: place nodes in a circle
-    if node_count > 0 {
-        let radius = std::cmp::min(SVG_WIDTH, SVG_HEIGHT) as f64 / 3.0;
-        let center_x = SVG_WIDTH as f64 / 2.0;
-        let center_y = SVG_HEIGHT as f64 / 2.0;
-
-        for (i, node) in graph.nodes.iter().enumerate() {
-            let angle = 2.0 * std::f64::consts::PI * (i as f64) / (node_count as f64);
-            let x = center_x + radius * angle.cos();
-            let y = center_y + radius * angle.sin();
-
-            positions.insert(node.clone(), (x as i32, y as i32));
-        }
-    }
-
-    positions
-}
-
 // Function to export the graph as an SVG string
 pub fn graph_to_svg(graph: &Graph) -> String {
-    generate_svg(graph)
+    info!(
+        "graph_to_svg: Starting SVG generation for graph with {} nodes and {} edges",
+        graph.nodes.len(),
+        graph.edges.len()
+    );
+    let start_time = Instant::now();
+
+    let result = generate_svg(graph);
+
+    info!(
+        "graph_to_svg: SVG generation completed in {:?}, SVG size: {} bytes",
+        start_time.elapsed(),
+        result.len()
+    );
+
+    result
 }
