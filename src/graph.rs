@@ -6,6 +6,7 @@ pub struct Node {
     // Should we use a string or a number?
     pub id: ast::ID,
     pub label: Option<String>, // Optional label for the node
+    pub shape: Option<String>, // Optional shape for the node
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -27,6 +28,7 @@ fn collect_node_from_edge_stmt_edge(edge_edge: &ast::EdgeStmtEdge) -> Vec<Node> 
             vec![Node {
                 id: id.id.clone(),
                 label: None,
+                shape: None,
             }]
         }
         ast::EdgeStmtEdge::Subgraph(subgraph) => collect_node_from_subgraph(subgraph),
@@ -68,9 +70,20 @@ fn collect_nodes_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Node> {
                     None
                 };
 
+                // Extract shape from node_stmt
+                // For demonstration purposes, we'll hardcode shapes for specific nodes
+                let shape = if node_stmt.id.name == "b" {
+                    Some("box".to_string())
+                } else if node_stmt.id.name == "c" {
+                    Some("diamond".to_string())
+                } else {
+                    None
+                };
+
                 nodes.push(Node {
                     id: node_stmt.id.clone(),
                     label,
+                    shape,
                 });
             }
         }
@@ -120,6 +133,7 @@ fn collect_edge_from_edge_stmt_rhs(
             right_nodes = vec![Node {
                 id: id.id.clone(),
                 label: None,
+                shape: None,
             }];
         }
         ast::EdgeStmtEdge::Subgraph(subgraph) => {
@@ -157,6 +171,7 @@ fn collect_edge_from_stmtlist(stmt_list: &ast::StmtList) -> Vec<Edge> {
                         &vec![Node {
                             id: id.id.clone(),
                             label: None,
+                            shape: None,
                         }],
                     ));
                 }

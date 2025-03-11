@@ -1,0 +1,8 @@
+digraph {
+    a [label="Node A"];
+    b [shape=box, label="Node B"];
+    c [shape=diamond, label="Node C"];
+    a -> b;
+    b -> c;
+    c -> a;
+}

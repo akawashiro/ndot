@@ -58,7 +58,7 @@ pub fn generate_svg(graph: &Graph) -> String {
         // Find the source and target nodes
         let source_node = graph.nodes.iter().find(|n| n.id == edge.source_id).unwrap();
         let target_node = graph.nodes.iter().find(|n| n.id == edge.target_id).unwrap();
-        
+
         let source_pos = node_positions.get(source_node).unwrap();
         let target_pos = node_positions.get(target_node).unwrap();
 

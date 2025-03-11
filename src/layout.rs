@@ -246,7 +246,7 @@ pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
         let source_node = graph.nodes.iter().find(|n| n.id == edge.source_id).unwrap();
         // Find the target node
         let target_node = graph.nodes.iter().find(|n| n.id == edge.target_id).unwrap();
-        
+
         adj_list
             .entry(edge.source_id.name.clone())
             .or_insert_with(Vec::new)
@@ -382,7 +382,7 @@ fn minimize_crossings(graph: &Graph, layers: &Vec<Vec<Node>>) -> HashMap<Node, i
         let source_node = graph.nodes.iter().find(|n| n.id == edge.source_id).unwrap();
         // Find the target node
         let target_node = graph.nodes.iter().find(|n| n.id == edge.target_id).unwrap();
-        
+
         outgoing
             .entry(edge.source_id.name.clone())
             .or_insert_with(Vec::new)

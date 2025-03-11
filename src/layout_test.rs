@@ -150,18 +150,21 @@ fn test_center_layout() {
             name: "a".to_string(),
         },
         label: None,
+        shape: None,
     };
     let node_b = Node {
         id: ast::ID {
             name: "b".to_string(),
         },
         label: None,
+        shape: None,
     };
     let node_c = Node {
         id: ast::ID {
             name: "c".to_string(),
         },
         label: None,
+        shape: None,
     };
 
     let mut positions = HashMap::new();
