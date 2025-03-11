@@ -113,22 +113,26 @@ pub fn generate_svg(graph: &Graph) -> String {
                     rect_width,
                     rect_height
                 ));
-            },
+            }
             Some(shape) if shape == "diamond" => {
                 // Draw a diamond shape (rotated square)
                 let diamond_size = layout::NODE_RADIUS * 2;
                 let points = format!(
                     "{},{} {},{} {},{} {},{}",
-                    pos.x, pos.y - diamond_size / 2,                // top point
-                    pos.x + diamond_size / 2, pos.y,                // right point
-                    pos.x, pos.y + diamond_size / 2,                // bottom point
-                    pos.x - diamond_size / 2, pos.y                 // left point
+                    pos.x,
+                    pos.y - diamond_size / 2, // top point
+                    pos.x + diamond_size / 2,
+                    pos.y, // right point
+                    pos.x,
+                    pos.y + diamond_size / 2, // bottom point
+                    pos.x - diamond_size / 2,
+                    pos.y // left point
                 );
                 svg.push_str(&format!(
                     r#"  <polygon points="{}" fill="white" stroke="black" stroke-width="2" />"#,
                     points
                 ));
-            },
+            }
             _ => {
                 // Default: draw a circle
                 svg.push_str(&format!(

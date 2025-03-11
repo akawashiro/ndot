@@ -1,19 +1,9 @@
 use clap::Parser;
 use env_logger;
 use log::info;
+use ndot::make_svg_from_dot; // Import from the library crate
 use std::env;
 use std::io::Write;
-
-mod ast;
-mod graph;
-mod layout;
-mod ndot;
-mod svg;
-mod tokenize;
-
-mod graph_test;
-#[cfg(test)]
-mod layout_test;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -46,7 +36,7 @@ fn main() {
     info!("input file: {}", args.input_file);
 
     let dot = std::fs::read_to_string(&args.input_file).unwrap();
-    let svg_content = match ndot::make_svg_from_dot(dot) {
+    let svg_content = match make_svg_from_dot(dot) {
         Ok(svg) => svg,
         Err(e) => {
             eprintln!("Error generating SVG: {}", e);

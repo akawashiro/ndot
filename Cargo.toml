@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "ndot"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ndot"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4.5.30", features = ["derive"] }
 env = "1.0.1"
