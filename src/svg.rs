@@ -100,13 +100,45 @@ pub fn generate_svg(graph: &Graph) -> String {
 
     // Draw nodes
     for (node, pos) in &node_positions {
-        // Draw node circle
-        svg.push_str(&format!(
-            r#"  <circle cx="{}" cy="{}" r="{}" fill="white" stroke="black" stroke-width="2" />"#,
-            pos.x,
-            pos.y,
-            layout::NODE_RADIUS
-        ));
+        // Draw node based on its shape
+        match &node.shape {
+            Some(shape) if shape == "box" => {
+                // Draw a rectangle for box shape
+                let rect_width = layout::NODE_RADIUS * 2;
+                let rect_height = layout::NODE_RADIUS * 2;
+                svg.push_str(&format!(
+                    r#"  <rect x="{}" y="{}" width="{}" height="{}" fill="white" stroke="black" stroke-width="2" />"#,
+                    pos.x - rect_width / 2,
+                    pos.y - rect_height / 2,
+                    rect_width,
+                    rect_height
+                ));
+            },
+            Some(shape) if shape == "diamond" => {
+                // Draw a diamond shape (rotated square)
+                let diamond_size = layout::NODE_RADIUS * 2;
+                let points = format!(
+                    "{},{} {},{} {},{} {},{}",
+                    pos.x, pos.y - diamond_size / 2,                // top point
+                    pos.x + diamond_size / 2, pos.y,                // right point
+                    pos.x, pos.y + diamond_size / 2,                // bottom point
+                    pos.x - diamond_size / 2, pos.y                 // left point
+                );
+                svg.push_str(&format!(
+                    r#"  <polygon points="{}" fill="white" stroke="black" stroke-width="2" />"#,
+                    points
+                ));
+            },
+            _ => {
+                // Default: draw a circle
+                svg.push_str(&format!(
+                    r#"  <circle cx="{}" cy="{}" r="{}" fill="white" stroke="black" stroke-width="2" />"#,
+                    pos.x,
+                    pos.y,
+                    layout::NODE_RADIUS
+                ));
+            }
+        }
 
         // Draw node label (use label if available, otherwise use ID)
         let display_text = match &node.label {
