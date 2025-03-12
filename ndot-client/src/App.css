@@ -85,6 +85,20 @@
   line-height: 1.5;
 }
 
+.error-message {
+  color: #ff5555;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  text-align: left;
+}
+
+.preview-content svg {
+  max-width: 100%;
+  height: auto;
+}
+
 @media (max-width: 768px) {
   .editor-container {
     flex-direction: column;

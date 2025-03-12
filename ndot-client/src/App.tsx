@@ -1,12 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { make_svg_from_dot } from 'ndot-wasm';
 import './App.css';
 
 function App() {
-  const [text, setText] = useState<string>('// Enter your code here...');
+  const defaultDotExample = `digraph graphname {
+    a -> b -> c;
+    b -> d;
+}`;
+
+  const [text, setText] = useState<string>(defaultDotExample);
+  const [svgOutput, setSvgOutput] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
   };
+
+  useEffect(() => {
+    try {
+      const result = make_svg_from_dot(text);
+      if (result.svg) {
+        setSvgOutput(result.svg);
+        setError(null);
+      } else if (result.error) {
+        setError(result.error);
+        setSvgOutput(null);
+      }
+    } catch (err) {
+      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      setSvgOutput(null);
+    }
+  }, [text]);
 
   return (
     <div className="app-container">
@@ -28,8 +52,11 @@ function App() {
         <div className="preview-pane">
           <h2>Preview</h2>
           <div className="preview-content">
-            {/* Dummy preview content for now */}
-            <pre>{text}</pre>
+            {error ? (
+              <div className="error-message">{error}</div>
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: svgOutput || '' }} />
+            )}
           </div>
         </div>
       </div>
