@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { make_svg_from_dot } from 'ndot-wasm';
+import init, { make_svg_from_dot } from 'ndot-wasm';
 import './App.css';
+
+async function initWasm() {
+  await init();
+}
 
 function App() {
   const defaultDotExample = `digraph graphname {
@@ -8,6 +12,7 @@ function App() {
     b -> d;
 }`;
 
+  const [isLoading, setIsLoading] = useState(true);
   const [text, setText] = useState<string>(defaultDotExample);
   const [svgOutput, setSvgOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +32,9 @@ function App() {
   };
 
   useEffect(() => {
+    initWasm().then(() => {
+      setIsLoading(false);
+    });
     try {
       const result = make_svg_from_dot(text);
       if (result.svg) {
@@ -42,36 +50,40 @@ function App() {
     }
   }, [text]);
 
-  return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>ndot Editor</h1>
-      </header>
+  if (isLoading) {
+    return <div>Loading...</div>;
+  } else {
+    return (
+      <div className="app-container">
+        <header className="app-header">
+          <h1>ndot Editor</h1>
+        </header>
 
-      <div className="editor-container">
-        <div className="editor-pane">
-          <h2>Editor</h2>
-          <textarea
-            className="text-editor"
-            value={text}
-            onChange={handleTextChange}
-            spellCheck={false}
-          />
-        </div>
+        <div className="editor-container">
+          <div className="editor-pane">
+            <h2>Editor</h2>
+            <textarea
+              className="text-editor"
+              value={text}
+              onChange={handleTextChange}
+              spellCheck={false}
+            />
+          </div>
 
-        <div className="preview-pane">
-          <h2>Preview</h2>
-          <div className="preview-content">
-            {error ? (
-              <div className="error-message">{error}</div>
-            ) : (
-              <div dangerouslySetInnerHTML={{ __html: svgOutput || '' }} />
-            )}
+          <div className="preview-pane">
+            <h2>Preview</h2>
+            <div className="preview-content">
+              {error ? (
+                <div className="error-message">{error}</div>
+              ) : (
+                <div dangerouslySetInnerHTML={{ __html: svgOutput || '' }} />
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
 
 export default App;
