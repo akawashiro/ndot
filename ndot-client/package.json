@@ -12,6 +12,11 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\""
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/roboto": "^5.2.5",
+    "@mui/icons-material": "^6.4.7",
+    "@mui/material": "^6.4.7",
     "ndot-wasm": "file:../ndot-wasm/pkg",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
