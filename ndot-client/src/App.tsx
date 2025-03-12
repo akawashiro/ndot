@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import './App.css'
+import { useState } from 'react';
+import './App.css';
 
 function App() {
-  const [text, setText] = useState<string>('// Enter your code here...')
+  const [text, setText] = useState<string>('// Enter your code here...');
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value)
-  }
+    setText(e.target.value);
+  };
 
   return (
     <div className="app-container">
@@ -34,7 +34,7 @@ function App() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
