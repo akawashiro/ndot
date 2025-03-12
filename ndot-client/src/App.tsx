@@ -114,13 +114,13 @@ function App() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            height: '100vh',
+            height: '100%',
           }}
         >
           <CircularProgress />
         </Box>
       ) : (
-        <Container fixed sx={{ p: 0, height: '100vh' }}>
+        <Container maxWidth={false} sx={{ p: 0, height: '100%', width: '100%' }}>
           <Grid2 container spacing={0} sx={{ height: '100%' }}>
             <Grid2 size={6} sx={{ height: '100%' }}>
               <Paper
