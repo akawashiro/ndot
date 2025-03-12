@@ -63,7 +63,8 @@ The binary will be available at `target/release/ndot`.
 
 ```bash
 cd ndot-wasm
-wasm-pack build
+cargo install wasm-pack
+wasm-pack build --target web
 ```
 
 This will generate WebAssembly bindings in the `pkg` directory.
