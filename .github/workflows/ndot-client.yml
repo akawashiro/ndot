@@ -1,0 +1,32 @@
+name: ndot-client CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ndot-client/**'
+  pull_request:
+    paths:
+      - 'ndot-client/**'
+
+jobs:
+  build:
+    name: Build and Format Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ndot-client
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ndot-client/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Check formatting
+        run: npm run format:check
