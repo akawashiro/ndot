@@ -2,10 +2,7 @@ import { useState, useEffect } from 'react';
 import init, { make_svg_from_dot } from 'ndot-wasm';
 import {
   Container,
-  AppBar,
-  Toolbar,
-  Typography,
-  Grid,
+  Grid2,
   Paper,
   TextField,
   CircularProgress,
@@ -123,9 +120,9 @@ function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Container maxWidth={false} sx={{ p: 0, height: '100vh' }}>
-          <Grid container spacing={0} sx={{ height: '100%' }}>
-            <Grid item xs={12} md={6} sx={{ height: '100%' }}>
+        <Container fixed sx={{ p: 0, height: '100vh' }}>
+          <Grid2 container spacing={0} sx={{ height: '100%' }}>
+            <Grid2 size={6} sx={{ height: '100%' }}>
               <Paper
                 elevation={3}
                 sx={{
@@ -155,15 +152,11 @@ function App() {
                       overflow: 'auto !important',
                     },
                   }}
-                  inputProps={{
-                    style: { height: '100%' },
-                    spellCheck: false,
-                  }}
                 />
               </Paper>
-            </Grid>
+            </Grid2>
 
-            <Grid item xs={12} md={6} sx={{ height: '100%' }}>
+            <Grid2 size={6} sx={{ height: '100%' }}>
               <Paper
                 elevation={3}
                 sx={{
@@ -213,8 +206,8 @@ function App() {
                   )}
                 </Paper>
               </Paper>
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Container>
       )}
     </ThemeProvider>
