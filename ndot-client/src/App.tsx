@@ -123,16 +123,8 @@ function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Container maxWidth="xl" sx={{ py: 3, height: '100vh' }}>
-          <AppBar position="static" color="transparent" elevation={0} sx={{ mb: 2 }}>
-            <Toolbar>
-              <Typography variant="h4" component="h1">
-                ndot Editor
-              </Typography>
-            </Toolbar>
-          </AppBar>
-
-          <Grid container spacing={2} sx={{ height: 'calc(100% - 80px)' }}>
+        <Container maxWidth={false} sx={{ p: 0, height: '100vh' }}>
+          <Grid container spacing={0} sx={{ height: '100%' }}>
             <Grid item xs={12} md={6} sx={{ height: '100%' }}>
               <Paper
                 elevation={3}
@@ -142,11 +134,9 @@ function App() {
                   display: 'flex',
                   flexDirection: 'column',
                   bgcolor: 'background.paper',
+                  borderRadius: 0,
                 }}
               >
-                <Typography variant="h6" sx={{ mb: 1, textAlign: 'left' }}>
-                  Editor
-                </Typography>
                 <TextField
                   multiline
                   value={text}
@@ -182,11 +172,9 @@ function App() {
                   display: 'flex',
                   flexDirection: 'column',
                   bgcolor: 'background.paper',
+                  borderRadius: 0,
                 }}
               >
-                <Typography variant="h6" sx={{ mb: 1, textAlign: 'left' }}>
-                  Preview
-                </Typography>
                 <Paper
                   elevation={0}
                   sx={{
