@@ -1,7 +1,6 @@
 use crate::graph::Graph;
 use crate::layout::{self, Position};
 use log::info;
-use std::time::Instant;
 
 // Constants for SVG generation
 const ARROW_SIZE: i32 = 10;
@@ -13,7 +12,6 @@ pub fn generate_svg(graph: &Graph) -> String {
         graph.nodes.len(),
         graph.edges.len()
     );
-    let start_time = Instant::now();
 
     // Calculate node positions based on graph type
     info!("generate_svg: Checking if graph is a DAG");
@@ -29,11 +27,6 @@ pub fn generate_svg(graph: &Graph) -> String {
         info!("generate_svg: Using circular layout for non-DAG");
         layout::calculate_circular_positions(graph)
     };
-
-    info!(
-        "generate_svg: Node positions calculated in {:?}",
-        start_time.elapsed()
-    );
 
     // Start SVG document
     let mut svg = format!(
@@ -168,15 +161,9 @@ pub fn graph_to_svg(graph: &Graph) -> String {
         graph.nodes.len(),
         graph.edges.len()
     );
-    let start_time = Instant::now();
 
     let result = generate_svg(graph);
 
-    info!(
-        "graph_to_svg: SVG generation completed in {:?}, SVG size: {} bytes",
-        start_time.elapsed(),
-        result.len()
-    );
-
+    info!("graph_to_svg: SVG generation complete");
     result
 }

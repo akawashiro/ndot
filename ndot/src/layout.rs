@@ -4,7 +4,6 @@ use log::{debug, info};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::ops::{Add, Sub};
-use std::time::Instant;
 
 // Position struct to represent node coordinates
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -57,14 +56,9 @@ pub const NODE_SPACING_Y: i32 = 80;
 // Function to check if a graph is a DAG (Directed Acyclic Graph)
 pub fn is_dag(graph: &Graph) -> bool {
     info!("is_dag: Checking if graph is a DAG");
-    let start_time = Instant::now();
 
     // If any edge is not directed, it's not a DAG
     if graph.edges.iter().any(|e| !e.is_directed) {
-        info!(
-            "is_dag: Found undirected edge, not a DAG. Took {:?}",
-            start_time.elapsed()
-        );
         return false;
     }
 
@@ -140,19 +134,11 @@ pub fn is_dag(graph: &Graph) -> bool {
         if !visited.contains(&node.id.name) {
             info!("is_dag: Checking unvisited node {}", node.id.name);
             if has_cycle(&node.id, &adj_list, &mut visited, &mut path) {
-                info!(
-                    "is_dag: Found cycle, not a DAG. Took {:?}",
-                    start_time.elapsed()
-                );
                 return false;
             }
         }
     }
 
-    info!(
-        "is_dag: No cycles found, is a DAG. Took {:?}",
-        start_time.elapsed()
-    );
     true
 }
 
@@ -169,13 +155,7 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
 
     // Step 1: Assign layers to nodes
     info!("calculate_sugiyama_positions: Assigning layers to nodes");
-    let layer_start = Instant::now();
     let layers = assign_layers(graph);
-    info!(
-        "calculate_sugiyama_positions: Layers assigned in {:?}, {} layers created",
-        layer_start.elapsed(),
-        layers.len()
-    );
 
     // Handle case where no layers were created (should not happen with non-empty graph)
     if layers.is_empty() {
@@ -185,12 +165,7 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
 
     // Step 2: Assign x-coordinates to minimize crossings
     info!("calculate_sugiyama_positions: Minimizing crossings");
-    let crossing_start = Instant::now();
     let x_positions = minimize_crossings(graph, &layers);
-    info!(
-        "calculate_sugiyama_positions: Crossings minimized in {:?}",
-        crossing_start.elapsed()
-    );
 
     // Step 3: Calculate final positions
     for (layer_idx, layer) in layers.iter().enumerate() {
@@ -218,7 +193,6 @@ pub fn calculate_sugiyama_positions(graph: &Graph) -> HashMap<Node, Position> {
 // Returns Vec<Vec<Node>> where each inner Vec<Node> contains nodes with the same rank
 pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
     info!("topological_sort: Starting topological sorting");
-    let start_time = Instant::now();
 
     // Result vector where each inner vector contains nodes of the same rank
     let mut ranks: Vec<Vec<Node>> = Vec::new();
@@ -319,44 +293,27 @@ pub fn topological_sort(graph: &Graph) -> Vec<Vec<Node>> {
         );
     }
 
-    info!(
-        "topological_sort: Topological sorting completed in {:?}, found {} ranks",
-        start_time.elapsed(),
-        ranks.len()
-    );
-
     ranks
 }
 
 // Function to assign layers to nodes
 pub fn assign_layers(graph: &Graph) -> Vec<Vec<Node>> {
     info!("assign_layers: Starting layer assignment");
-    let start_time = Instant::now();
 
     // Perform topological sorting to get initial layers
     let layers = topological_sort(graph);
 
     // Optimize layer assignment to minimize edge lengths
     info!("assign_layers: Optimizing layer assignment");
-    let optimize_start = Instant::now();
     // Do we need to optimize the layers?
     let optimized_layers = layers;
-    info!(
-        "assign_layers: Layer optimization completed in {:?}",
-        optimize_start.elapsed()
-    );
 
-    info!(
-        "assign_layers: Layer assignment completed in {:?}",
-        start_time.elapsed()
-    );
     optimized_layers
 }
 
 // Function to minimize edge crossings
 fn minimize_crossings(graph: &Graph, layers: &Vec<Vec<Node>>) -> HashMap<Node, i32> {
     info!("minimize_crossings: Starting crossing minimization");
-    let start_time = Instant::now();
 
     let mut x_positions = HashMap::new();
 
@@ -480,7 +437,6 @@ pub fn center_layout(positions: &mut HashMap<Node, Position>) {
         "center_layout: Starting layout centering for {} nodes",
         positions.len()
     );
-    let start_time = Instant::now();
 
     if positions.is_empty() {
         info!("center_layout: No positions to center, returning");
@@ -516,11 +472,6 @@ pub fn center_layout(positions: &mut HashMap<Node, Position>) {
         pos.x += offset_x;
         pos.y += offset_y;
     }
-
-    info!(
-        "center_layout: Layout centered in {:?}",
-        start_time.elapsed()
-    );
 }
 
 // Function to calculate node positions using circular layout (for non-DAGs)
@@ -529,7 +480,6 @@ pub fn calculate_circular_positions(graph: &Graph) -> HashMap<Node, Position> {
         "calculate_circular_positions: Starting circular layout for {} nodes",
         graph.nodes.len()
     );
-    let start_time = Instant::now();
 
     let mut positions = HashMap::new();
     let node_count = graph.nodes.len();
@@ -556,9 +506,5 @@ pub fn calculate_circular_positions(graph: &Graph) -> HashMap<Node, Position> {
         }
     }
 
-    info!(
-        "calculate_circular_positions: Circular layout completed in {:?}",
-        start_time.elapsed()
-    );
     positions
 }
