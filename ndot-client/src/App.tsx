@@ -14,6 +14,16 @@ function App() {
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
+    let svg = make_svg_from_dot(e.target.value);
+    if (svg.svg) {
+      console.log('Get svg successfully.');
+      setSvgOutput(svg.svg);
+      setError(null);
+    } else if (svg.error) {
+      console.log('Get error of ', svg.error);
+      setSvgOutput(null);
+      setError(svg.error);
+    }
   };
 
   useEffect(() => {
