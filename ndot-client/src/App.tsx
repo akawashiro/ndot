@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import init, { make_svg_from_dot } from 'ndot-wasm';
+import { v7 as uuidv7 } from 'uuid';
 import {
   Container,
   Grid2,
@@ -188,10 +189,63 @@ function App() {
   const [svgOutput, setSvgOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedSample, setSelectedSample] = useState<SampleKey>('digraph');
+  const [fileId, setFileId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only update the text state, the useEffect hook will handle the SVG generation
     setText(e.target.value);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      // Generate a new UUID v7 if we don't have one
+      const id = fileId || uuidv7();
+
+      // Make the API request
+      const response = await fetch('http://localhost:30080/api/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id,
+          content: text,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Save was successful
+        setFileId(id); // Store the ID for future saves
+        setSaveMessage({
+          type: 'success',
+          text: 'File saved successfully!',
+        });
+      } else {
+        // Save failed with an error from the server
+        setSaveMessage({
+          type: 'error',
+          text: data.error || 'Failed to save file',
+        });
+      }
+    } catch (err) {
+      // Network or other error
+      setSaveMessage({
+        type: 'error',
+        text: `Error: ${err instanceof Error ? err.message : String(err)}`,
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSampleChange = (event: SelectChangeEvent) => {
@@ -333,9 +387,23 @@ function App() {
                     borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
                   }}
                 >
-                  <Button fullWidth variant="contained">
-                    Save
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
                   </Button>
+                  {saveMessage && (
+                    <Alert
+                      severity={saveMessage.type}
+                      sx={{ mt: 1 }}
+                      onClose={() => setSaveMessage(null)}
+                    >
+                      {saveMessage.text}
+                    </Alert>
+                  )}
                 </Paper>
                 <Box sx={{ flex: 1, overflow: 'hidden' }}>
                   <Editor text={text} onTextChange={handleTextChange} />
