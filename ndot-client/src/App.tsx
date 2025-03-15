@@ -210,7 +210,7 @@ function App() {
       const id = fileId || uuidv7();
 
       // Make the API request
-      const response = await fetch('http://localhost:30080/api/save', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/save`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
