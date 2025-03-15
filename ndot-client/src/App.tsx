@@ -221,12 +221,12 @@ function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Container maxWidth={false} sx={{ height: '100%' }}>
-          <Grid2 container spacing={0} sx={{ height: '100%' }}>
-            <Grid2 size={6} sx={{ height: '100%' }}>
+        <Container maxWidth={false}>
+          <Grid2 container spacing={0}>
+            <Grid2 size={6}>
               <Editor text={text} onTextChange={handleTextChange} />
             </Grid2>
-            <Grid2 size={6} sx={{ height: '100%' }}>
+            <Grid2 size={6}>
               <Preview svgOutput={svgOutput} error={error} />
             </Grid2>
           </Grid2>
