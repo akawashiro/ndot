@@ -229,15 +229,20 @@ function EditorPage() {
       const data = await response.json();
 
       if (data.success) {
+        console.log('id=', id);
         // Save was successful
         setFileId(id); // Store the ID for future saves
+
+        // Construct the full URL
+        const fullUrl = `${window.location.origin}/ndot/${id}`;
+
         setSaveMessage({
           type: 'success',
-          text: 'File saved successfully!',
+          text: `File saved successfully! URL: ${fullUrl}`,
         });
-        
+
         // Update the URL with the file ID
-        navigate(`/${id}`);
+        navigate(`/ndot/${id}`);
       } else {
         // Save failed with an error from the server
         setSaveMessage({
@@ -268,7 +273,7 @@ function EditorPage() {
     if (id && wasmInitialized) {
       setIsContentLoading(true);
       setFileId(id);
-      
+
       fetch(`${import.meta.env.VITE_API_URL}/api/get/${id}`)
         .then(response => response.json())
         .then(data => {
@@ -279,7 +284,9 @@ function EditorPage() {
           }
         })
         .catch(err => {
-          setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
+          setError(
+            `Error: ${err instanceof Error ? err.message : String(err)}`
+          );
         })
         .finally(() => {
           setIsContentLoading(false);
@@ -434,7 +441,27 @@ function EditorPage() {
                       sx={{ mt: 1 }}
                       onClose={() => setSaveMessage(null)}
                     >
-                      {saveMessage.text}
+                      {saveMessage.type === 'success' &&
+                      saveMessage.text.includes('URL:') ? (
+                        <>
+                          File saved successfully!
+                          <br />
+                          <Box
+                            component="a"
+                            href={saveMessage.text.split('URL: ')[1]}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{
+                              fontWeight: 'bold',
+                              wordBreak: 'break-all',
+                            }}
+                          >
+                            {saveMessage.text.split('URL: ')[1]}
+                          </Box>
+                        </>
+                      ) : (
+                        saveMessage.text
+                      )}
                     </Alert>
                   )}
                 </Paper>
@@ -457,8 +484,8 @@ function EditorPage() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<EditorPage />} />
-      <Route path="/:id" element={<EditorPage />} />
+      <Route path="/ndot/" element={<EditorPage />} />
+      <Route path="/ndot/:id" element={<EditorPage />} />
     </Routes>
   );
 }
