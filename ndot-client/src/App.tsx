@@ -238,7 +238,7 @@ function EditorPage() {
         setFileId(id); // Store the ID for future saves
 
         // Construct the full URL with query parameter
-        const fullUrl = `${window.location.origin}/ndot/?id=${id}`;
+        const fullUrl = `${window.location.origin}/ndot?id=${id}`;
 
         setSaveMessage({
           type: 'success',
