@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import init, { make_svg_from_dot } from 'ndot-wasm';
 import { v7 as uuidv7 } from 'uuid';
-import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   Container,
   Grid2,
@@ -186,8 +186,12 @@ const Preview: React.FunctionComponent<PreviewProps> = ({
 
 // EditorPage component that contains the editor functionality
 function EditorPage() {
-  const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Use URLSearchParams to get the ID from the query string
+  const searchParams = new URLSearchParams(location.search);
+  const queryId = searchParams.get('id');
   const [isLoading, setIsLoading] = useState(true);
   const [isContentLoading, setIsContentLoading] = useState(false);
   const [text, setText] = useState<string>(samples.digraph);
@@ -233,16 +237,16 @@ function EditorPage() {
         // Save was successful
         setFileId(id); // Store the ID for future saves
 
-        // Construct the full URL
-        const fullUrl = `${window.location.origin}/ndot/${id}`;
+        // Construct the full URL with query parameter
+        const fullUrl = `${window.location.origin}/ndot/?id=${id}`;
 
         setSaveMessage({
           type: 'success',
           text: `File saved successfully! URL: ${fullUrl}`,
         });
 
-        // Update the URL with the file ID
-        navigate(`/ndot/${id}`);
+        // Update the URL with the file ID as a query parameter
+        navigate(`/ndot?id=${id}`);
       } else {
         // Save failed with an error from the server
         setSaveMessage({
@@ -267,14 +271,13 @@ function EditorPage() {
     setText(samples[sampleKey]);
   };
 
-  // Fetch content when ID parameter is present
+  // Fetch content when ID query parameter is present
   useEffect(() => {
-    const id = params.id;
-    if (id && wasmInitialized) {
+    if (queryId && wasmInitialized) {
       setIsContentLoading(true);
-      setFileId(id);
+      setFileId(queryId);
 
-      fetch(`${import.meta.env.VITE_API_URL}/api/get/${id}`)
+      fetch(`${import.meta.env.VITE_API_URL}/api/get/${queryId}`)
         .then(response => response.json())
         .then(data => {
           if (data.success && data.content) {
@@ -292,7 +295,7 @@ function EditorPage() {
           setIsContentLoading(false);
         });
     }
-  }, [params.id, wasmInitialized]);
+  }, [queryId, wasmInitialized]);
 
   // Initialize WebAssembly module
   useEffect(() => {
@@ -484,8 +487,8 @@ function EditorPage() {
 function App() {
   return (
     <Routes>
-      <Route path="/ndot/" element={<EditorPage />} />
-      <Route path="/ndot/:id" element={<EditorPage />} />
+      {/* Single route for both with and without ID, since we're using query parameters */}
+      <Route path="/ndot" element={<EditorPage />} />
     </Routes>
   );
 }
