@@ -62,8 +62,11 @@ const darkTheme = createTheme({
   },
 });
 
+let wasmInitialized = false;
+
 async function initWasm() {
   await init();
+  wasmInitialized = true;
 }
 
 interface EditorProps {
@@ -184,38 +187,59 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only update the text state, the useEffect hook will handle the SVG generation
     setText(e.target.value);
-    try {
-      const svg = make_svg_from_dot(e.target.value);
-      if (svg.svg) {
-        console.log('Get svg successfully.');
-        setSvgOutput(svg.svg);
-        setError(null);
-      } else if (svg.error) {
-        console.log('Get error of ', svg.error);
-        setSvgOutput(null);
-        setError(svg.error);
-      }
-    } catch (err) {
-      setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
-      setSvgOutput(null);
-    }
   };
 
+  // Initialize WebAssembly module
   useEffect(() => {
-    initWasm().then(() => {
-      setIsLoading(false);
-    });
+    initWasm()
+      .then(() => {
+        setIsLoading(false);
+        // Only try to generate SVG after WebAssembly is initialized
+        try {
+          const result = make_svg_from_dot(text);
+          if (result.svg) {
+            setSvgOutput(result.svg);
+            setError(null);
+          } else if (result.error) {
+            setError(result.error);
+            setSvgOutput(null);
+          }
+        } catch (err) {
+          setError(
+            `Error: ${err instanceof Error ? err.message : String(err)}`
+          );
+          setSvgOutput(null);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to initialize WebAssembly module:', err);
+        setError(
+          `Failed to initialize WebAssembly module: ${err instanceof Error ? err.message : String(err)}`
+        );
+        setIsLoading(false);
+      });
+  }, []);
+
+  // Update the SVG when text changes, but only if WebAssembly is initialized
+  useEffect(() => {
+    if (!wasmInitialized) return;
+
     try {
+      console.log('Generating SVG from text:', text);
       const result = make_svg_from_dot(text);
       if (result.svg) {
+        console.log('SVG generated successfully');
         setSvgOutput(result.svg);
         setError(null);
       } else if (result.error) {
+        console.log('Error generating SVG:', result.error);
         setError(result.error);
         setSvgOutput(null);
       }
     } catch (err) {
+      console.error('Exception while generating SVG:', err);
       setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
       setSvgOutput(null);
     }
