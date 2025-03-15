@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import init, { make_svg_from_dot } from 'ndot-wasm';
 import { v7 as uuidv7 } from 'uuid';
+import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
   Grid2,
@@ -183,8 +184,12 @@ const Preview: React.FunctionComponent<PreviewProps> = ({
   );
 };
 
-function App() {
+// EditorPage component that contains the editor functionality
+function EditorPage() {
+  const params = useParams();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isContentLoading, setIsContentLoading] = useState(false);
   const [text, setText] = useState<string>(samples.digraph);
   const [svgOutput, setSvgOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -230,6 +235,9 @@ function App() {
           type: 'success',
           text: 'File saved successfully!',
         });
+        
+        // Update the URL with the file ID
+        navigate(`/${id}`);
       } else {
         // Save failed with an error from the server
         setSaveMessage({
@@ -253,6 +261,31 @@ function App() {
     setSelectedSample(sampleKey);
     setText(samples[sampleKey]);
   };
+
+  // Fetch content when ID parameter is present
+  useEffect(() => {
+    const id = params.id;
+    if (id && wasmInitialized) {
+      setIsContentLoading(true);
+      setFileId(id);
+      
+      fetch(`${import.meta.env.VITE_API_URL}/api/get/${id}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.content) {
+            setText(data.content);
+          } else {
+            setError(`Error: ${data.error || 'Failed to load content'}`);
+          }
+        })
+        .catch(err => {
+          setError(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        })
+        .finally(() => {
+          setIsContentLoading(false);
+        });
+    }
+  }, [params.id, wasmInitialized]);
 
   // Initialize WebAssembly module
   useEffect(() => {
@@ -313,7 +346,7 @@ function App() {
       <CssBaseline />
       {globalStyles}
       <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {isLoading ? (
+        {isLoading || isContentLoading ? (
           <Box
             sx={{
               display: 'flex',
@@ -417,6 +450,16 @@ function App() {
         )}
       </Box>
     </ThemeProvider>
+  );
+}
+
+// Main App component with routes
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<EditorPage />} />
+      <Route path="/:id" element={<EditorPage />} />
+    </Routes>
   );
 }
 
