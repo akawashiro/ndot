@@ -103,3 +103,31 @@ Example:
 ```bash
 python main.py --port 8080 --save-dir "my_dot_files"
 ```
+
+## Docker Support
+
+The ndot-server can be built and run using Docker. This provides a consistent environment and simplifies deployment.
+
+### Building the Docker Image
+
+From the root directory of the project:
+
+```bash
+docker build -t ndot-server -f ndot-server/Dockerfile .
+```
+
+### Running with Docker
+
+Basic usage:
+
+```bash
+docker run -p 30080:30080 ndot-server
+```
+
+With custom configuration:
+
+```bash
+docker run -p 8080:8080 -e PORT=8080 -e SAVE_DIR=/data -v /host/path/to/data:/data ndot-server
+```
+
+For more detailed information about Docker usage, see [README.docker.md](README.docker.md).
