@@ -221,7 +221,7 @@ function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Container maxWidth="xl" sx={{ height: '100%' }}>
+        <Container maxWidth={false} sx={{ height: '100%' }}>
           <Grid2 container spacing={0} sx={{ height: '100%' }}>
             <Grid2 size={6} sx={{ height: '100%' }}>
               <Editor text={text} onTextChange={handleTextChange} />
