@@ -11,8 +11,23 @@ import {
   createTheme,
   CssBaseline,
   Box,
+  GlobalStyles,
 } from '@mui/material';
 import React from 'react';
+
+// Global styles to ensure full height
+const globalStyles = (
+  <GlobalStyles
+    styles={{
+      'html, body, #root': {
+        height: '100%',
+        margin: 0,
+        padding: 0,
+        overflow: 'hidden',
+      },
+    }}
+  />
+);
 
 // Create dark theme
 const darkTheme = createTheme({
@@ -209,29 +224,49 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      {isLoading ? (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100%',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Container maxWidth={false}>
-          <Grid2 container spacing={0}>
-            <Grid2 size={6}>
-              <Editor text={text} onTextChange={handleTextChange} />
+      {globalStyles}
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {isLoading ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flex: 1,
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Container
+            maxWidth={false}
+            sx={{
+              height: '100%',
+              p: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+          >
+            <Grid2
+              container
+              spacing={0}
+              sx={{
+                flex: 1,
+                height: '100%',
+                overflow: 'hidden',
+              }}
+            >
+              <Grid2 size={6} sx={{ height: '100%' }}>
+                <Editor text={text} onTextChange={handleTextChange} />
+              </Grid2>
+              <Grid2 size={6} sx={{ height: '100%' }}>
+                <Preview svgOutput={svgOutput} error={error} />
+              </Grid2>
             </Grid2>
-            <Grid2 size={6}>
-              <Preview svgOutput={svgOutput} error={error} />
-            </Grid2>
-          </Grid2>
-        </Container>
-      )}
+          </Container>
+        )}
+      </Box>
     </ThemeProvider>
   );
 }
