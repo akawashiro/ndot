@@ -1,3 +1,4 @@
+import argparse
 import flask
 import logging.config
 from flask_cors import CORS, cross_origin
@@ -45,6 +46,21 @@ def index():
     return flask.redirect("/ndot", code=302)
 
 
+def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="ndot-server")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=30080,
+        help="Port to run the server on (default: 30080)",
+    )
+    args = parser.parse_args()
+
+    # Start the server
+    app.logger.info(f"Start ndot-server on port {args.port}")
+    app.run(debug=True, port=args.port, host="0.0.0.0")
+
+
 if __name__ == "__main__":
-    app.logger.info("Start ndot-server")
-    app.run(debug=True, port=30080, host="0.0.0.0")
+    main()
