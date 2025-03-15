@@ -12,6 +12,7 @@ import {
   CssBaseline,
   Box,
 } from '@mui/material';
+import React from 'react';
 
 // Create dark theme
 const darkTheme = createTheme({
@@ -49,6 +50,112 @@ const darkTheme = createTheme({
 async function initWasm() {
   await init();
 }
+
+interface EditorProps {
+  text: string;
+  onTextChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const Editor: React.FunctionComponent<EditorProps> = ({
+  text,
+  onTextChange,
+}) => {
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+        borderRadius: 0,
+      }}
+    >
+      <TextField
+        multiline
+        value={text}
+        onChange={onTextChange}
+        sx={{
+          flex: 1,
+          '& .MuiInputBase-root': {
+            height: '100%',
+            bgcolor: '#2d2d2d',
+            fontFamily: '"Courier New", monospace',
+            fontSize: '14px',
+            lineHeight: 1.5,
+          },
+          '& .MuiInputBase-input': {
+            height: '100% !important',
+            overflow: 'auto !important',
+          },
+        }}
+      />
+    </Paper>
+  );
+};
+
+interface PreviewProps {
+  svgOutput: string | null;
+  error: string | null;
+}
+
+const Preview: React.FunctionComponent<PreviewProps> = ({
+  svgOutput,
+  error,
+}) => {
+  return (
+    <Paper
+      elevation={3}
+      sx={{
+        p: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+        borderRadius: 0,
+      }}
+    >
+      <Paper
+        elevation={0}
+        sx={{
+          flex: 1,
+          p: 2,
+          bgcolor: '#2d2d2d',
+          overflow: 'auto',
+          '& svg': {
+            maxWidth: '100%',
+            height: 'auto',
+          },
+        }}
+      >
+        {error ? (
+          <Alert
+            severity="error"
+            sx={{
+              bgcolor: 'transparent',
+              color: '#ff5555',
+              fontFamily: '"Courier New", monospace',
+              fontSize: '14px',
+              whiteSpace: 'pre-wrap',
+              textAlign: 'left',
+              '& .MuiAlert-icon': {
+                color: '#ff5555',
+              },
+            }}
+          >
+            {error}
+          </Alert>
+        ) : (
+          <Box
+            sx={{ height: '100%' }}
+            dangerouslySetInnerHTML={{ __html: svgOutput || '' }}
+          />
+        )}
+      </Paper>
+    </Paper>
+  );
+};
 
 function App() {
   const defaultDotExample = `digraph graphname {
@@ -114,92 +221,13 @@ function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Container maxWidth={false} sx={{ p: 0, height: '100%', width: '100%' }}>
+        <Container maxWidth="xl" sx={{ height: '100%' }}>
           <Grid2 container spacing={0} sx={{ height: '100%' }}>
             <Grid2 size={6} sx={{ height: '100%' }}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  bgcolor: 'background.paper',
-                  borderRadius: 0,
-                }}
-              >
-                <TextField
-                  multiline
-                  value={text}
-                  onChange={handleTextChange}
-                  sx={{
-                    flex: 1,
-                    '& .MuiInputBase-root': {
-                      height: '100%',
-                      bgcolor: '#2d2d2d',
-                      fontFamily: '"Courier New", monospace',
-                      fontSize: '14px',
-                      lineHeight: 1.5,
-                    },
-                    '& .MuiInputBase-input': {
-                      height: '100% !important',
-                      overflow: 'auto !important',
-                    },
-                  }}
-                />
-              </Paper>
+              <Editor text={text} onTextChange={handleTextChange} />
             </Grid2>
-
             <Grid2 size={6} sx={{ height: '100%' }}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 2,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  bgcolor: 'background.paper',
-                  borderRadius: 0,
-                }}
-              >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    flex: 1,
-                    p: 2,
-                    bgcolor: '#2d2d2d',
-                    overflow: 'auto',
-                    '& svg': {
-                      maxWidth: '100%',
-                      height: 'auto',
-                    },
-                  }}
-                >
-                  {error ? (
-                    <Alert
-                      severity="error"
-                      sx={{
-                        bgcolor: 'transparent',
-                        color: '#ff5555',
-                        fontFamily: '"Courier New", monospace',
-                        fontSize: '14px',
-                        whiteSpace: 'pre-wrap',
-                        textAlign: 'left',
-                        '& .MuiAlert-icon': {
-                          color: '#ff5555',
-                        },
-                      }}
-                    >
-                      {error}
-                    </Alert>
-                  ) : (
-                    <Box
-                      sx={{ height: '100%' }}
-                      dangerouslySetInnerHTML={{ __html: svgOutput || '' }}
-                    />
-                  )}
-                </Paper>
-              </Paper>
+              <Preview svgOutput={svgOutput} error={error} />
             </Grid2>
           </Grid2>
         </Container>
