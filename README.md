@@ -163,6 +163,29 @@ cd ndot-wasm
 wasm-pack test --headless --firefox
 ```
 
+### GitHub Pages Deployment
+
+The ndot-client web application is automatically deployed to GitHub Pages when changes are pushed to the main branch. The deployment process is handled by a GitHub Actions workflow defined in `.github/workflows/deploy.yml`.
+
+To manually trigger a deployment:
+
+1. Go to the GitHub repository
+2. Navigate to the Actions tab
+3. Select the "Deploy to GitHub Pages" workflow
+4. Click "Run workflow"
+
+The deployed application will be available at: https://akawashiro.github.io/ndot/
+
+#### Deployment Process
+
+The deployment workflow:
+
+1. Builds the ndot-wasm package with `wasm-pack build --target web`
+2. Builds the ndot-client application with `npm run build`
+3. Deploys the built files to GitHub Pages
+
+If you need to make changes to the deployment process, edit the `.github/workflows/deploy.yml` file.
+
 ### Project Structure
 
 ```
