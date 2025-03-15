@@ -12,4 +12,8 @@ export default defineConfig({
     },
   },
   plugins: [react(), wasm(), topLevelAwait()],
+    build: {
+    outDir: "../ndot-server/static",
+    emptyOutDir: false,
+  }
 });
