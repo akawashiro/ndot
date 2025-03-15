@@ -2,7 +2,7 @@ name: ndot CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'ndot/**'
   pull_request:
