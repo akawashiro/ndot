@@ -17,6 +17,7 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
+  Button,
 } from '@mui/material';
 import { samples, sampleNames, SampleKey } from './samples';
 import React from 'react';
@@ -322,6 +323,19 @@ function App() {
                       ))}
                     </Select>
                   </FormControl>
+                </Paper>
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    borderRadius: 0,
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <Button fullWidth variant="contained">
+                    Save
+                  </Button>
                 </Paper>
                 <Box sx={{ flex: 1, overflow: 'hidden' }}>
                   <Editor text={text} onTextChange={handleTextChange} />
