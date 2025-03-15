@@ -4,11 +4,12 @@ ndot is a modern DOT language parser and SVG renderer implemented in Rust. This 
 
 ## Project Structure
 
-This repository consists of three main components:
+This repository consists of four main components:
 
 - **ndot**: Core Rust library and CLI tool for parsing DOT language and generating SVG
 - **ndot-wasm**: WebAssembly wrapper for the ndot library, enabling usage in web environments
 - **ndot-client**: Web-based editor for creating and visualizing DOT graphs
+- **ndot-server**: Flask-based web server for hosting the ndot-client application
 
 ## Components
 
@@ -40,6 +41,15 @@ A React-based web application that provides a user interface for:
 - Visualizing the resulting graph in real-time
 - Exporting SVG output
 
+### ndot-server
+
+A Flask-based web server that:
+
+- Serves the ndot-client web application
+- Provides routing for the application
+- Enables CORS for cross-origin requests
+- Can be deployed on any server supporting Python
+
 ## Installation
 
 ### Prerequisites
@@ -47,6 +57,7 @@ A React-based web application that provides a user interface for:
 - Rust toolchain (for ndot and ndot-wasm)
 - Node.js and npm (for ndot-client)
 - wasm-pack (for building ndot-wasm)
+- Python 3.x (for ndot-server)
 
 ### Building from Source
 
@@ -79,6 +90,13 @@ npm run build
 
 The built web application will be available in the `dist` directory.
 
+#### ndot-server
+
+```bash
+cd ndot-server
+pip install -r requirements.txt  # or use: pip install flask flask-cors
+```
+
 ## Usage
 
 ### CLI Usage (ndot)
@@ -89,7 +107,7 @@ ndot --input-file input.dot --output-file output.svg
 
 ### Web Client
 
-To run the web client locally:
+To run the web client locally using Vite's development server:
 
 ```bash
 cd ndot-client
@@ -97,6 +115,17 @@ npm run dev
 ```
 
 Then open your browser to the URL shown in the terminal (typically http://localhost:5173).
+
+### Server Deployment
+
+To run the ndot-server:
+
+```bash
+cd ndot-server
+python main.py --port 30080
+```
+
+Then open your browser to http://localhost:30080. The server will serve the ndot-client application from the `static` directory.
 
 ### API Usage (for developers)
 
@@ -208,6 +237,10 @@ ndot-client/        # Web client
 ├── src/            # Source code
 │   ├── App.tsx     # Main application component
 │   └── ...         # Other React components
+│
+ndot-server/        # Flask web server
+├── main.py         # Server entry point
+└── static/         # Static files directory for serving the client
 ```
 
 ## License
