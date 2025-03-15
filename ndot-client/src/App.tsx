@@ -12,7 +12,13 @@ import {
   CssBaseline,
   Box,
   GlobalStyles,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from '@mui/material';
+import { samples, sampleNames, SampleKey } from './samples';
 import React from 'react';
 
 // Global styles to ensure full height
@@ -176,19 +182,21 @@ const Preview: React.FunctionComponent<PreviewProps> = ({
 };
 
 function App() {
-  const defaultDotExample = `digraph graphname {
-    a -> b -> c;
-    b -> d;
-}`;
-
   const [isLoading, setIsLoading] = useState(true);
-  const [text, setText] = useState<string>(defaultDotExample);
+  const [text, setText] = useState<string>(samples.digraph);
   const [svgOutput, setSvgOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSample, setSelectedSample] = useState<SampleKey>('digraph');
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only update the text state, the useEffect hook will handle the SVG generation
     setText(e.target.value);
+  };
+
+  const handleSampleChange = (event: SelectChangeEvent) => {
+    const sampleKey = event.target.value as SampleKey;
+    setSelectedSample(sampleKey);
+    setText(samples[sampleKey]);
   };
 
   // Initialize WebAssembly module
@@ -281,8 +289,43 @@ function App() {
                 overflow: 'hidden',
               }}
             >
-              <Grid2 size={6} sx={{ height: '100%' }}>
-                <Editor text={text} onTextChange={handleTextChange} />
+              <Grid2
+                size={6}
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    borderRadius: 0,
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="sample-select-label">Sample</InputLabel>
+                    <Select
+                      labelId="sample-select-label"
+                      id="sample-select"
+                      value={selectedSample}
+                      label="Sample"
+                      onChange={handleSampleChange}
+                    >
+                      {Object.entries(sampleNames).map(([key, name]) => (
+                        <MenuItem key={key} value={key}>
+                          {name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Paper>
+                <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                  <Editor text={text} onTextChange={handleTextChange} />
+                </Box>
               </Grid2>
               <Grid2 size={6} sx={{ height: '100%' }}>
                 <Preview svgOutput={svgOutput} error={error} />
