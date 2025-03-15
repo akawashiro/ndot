@@ -405,12 +405,12 @@ function EditorPage() {
                   }}
                 >
                   <FormControl fullWidth size="small">
-                    <InputLabel id="sample-select-label">Sample</InputLabel>
+                    <InputLabel id="sample-select-label">Load sample</InputLabel>
                     <Select
                       labelId="sample-select-label"
                       id="sample-select"
                       value={selectedSample}
-                      label="Sample"
+                      label="Load sample"
                       onChange={handleSampleChange}
                     >
                       {Object.entries(sampleNames).map(([key, name]) => (
